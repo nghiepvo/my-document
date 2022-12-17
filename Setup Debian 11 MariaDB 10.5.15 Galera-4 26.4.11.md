@@ -1,8 +1,9 @@
-# Setup Debian 11 MariaDB 10.5.15 Galera-4 26.4.11.
-## Information PC and setup version  
+# Setup Debian 11 MariaDB 10.5.15 Galera-4 26.4.11
+
+## Information PC and setup version
 
 - Debian 11  
-- MariaDB 10.5.15
+- MariaDB 10.5.15  
 - Galera-4 26.4.11  
 
 | IP            | Node name  |
@@ -16,9 +17,9 @@
 
 Use **Terminator** application on Linux.  
 
-**mysql client:** use Ctrl + L for clear screen LOL.  
+**mysql client:** use ```Ctrl + L``` or ```\! cls``` for clear screen LOL.  
 
-#### vim: copy and parse
+### vim: copy and parse
 
 **Shift-v** starts visual mode and selects current line  
 **j** or arrow next. Visual mode movement 3 lines below current line  
@@ -81,6 +82,12 @@ Use **Terminator** application on Linux.
 #bind_address = 127.0.0.1
 ```
 
+*Append under **[mysqld]**.*
+
+```text
+skip-grant-tables
+```
+
 *Append under **[mariadb]**.*
 
 ```text
@@ -113,7 +120,7 @@ tmpdir                  = /tmp
 lc-messages-dir         = /usr/share/mysql
 lc-messages             = en_US
 skip-external-locking
-
+skip-grant-tables
 # Broken reverse DNS slows down connections considerably and name resolve is
 # safe to skip if there are no "host by domain name" access grants
 #skip-name-resolve
@@ -264,10 +271,9 @@ set global gtid_slave_pos='';
 
 *Make sure it shall be the same with master node.*  
 
-
 ## Maxscale Node
 
-> wget https://dlm.mariadb.com/2700606/MaxScale/22.08.3/packages/debian/bullseye/x86_64/maxscale-22.08.3-1.debian.bullseye.x86_64.deb  
+> wget <https://dlm.mariadb.com/2700606/MaxScale/22.08.3/packages/debian/bullseye/x86_64/maxscale-22.08.3-1.debian.bullseye.x86_64.deb>  
 > apt install libcurl4 -y  
 > dpkg -i maxscale-22.08.3-1.debian.bullseye.x86_64.deb  
 > vi /etc/maxscale.cnf  
@@ -406,6 +412,9 @@ port=3306
 > maxctrl show maxscale  
 > maxctrl list services  
 > maxctrl list servers  
+> maxctrl list monitors  
 
+*Make to back master.*
+> maxctrl call command mariamon switchover Mariadb-Monitor galera-1 Backup  
 
-
+## End
