@@ -257,7 +257,7 @@ server_id=172
 *It should empty.*  
 
 set global gtid_slave_pos='';  
-> change master to master_host='192.168.1.171', > master_port=3306, master_user='repl_user', master_password='password', master_use_gtid=current_pos;  
+> change master to master_host='192.168.1.171', master_port=3306, master_user='repl_user', master_password='password', master_use_gtid=current_pos;  
 > start slave;  
 > show slave status\G;  
 
