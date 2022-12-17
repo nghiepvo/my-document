@@ -29,52 +29,80 @@ Use **Terminator** application on Linux.
 ## Command galera-1, galera-2, galera-3 nodes
 
 **Check.**  
-> apt list mariadb-server mariadb-backup -a  
+
+```shell
+apt list mariadb-server mariadb-backup -a  
+```
 
 **Install.**
-> apt install mariadb-server mariadb-backup -y  
+
+```shell
+apt install mariadb-server mariadb-backup -y  
+```
 
 **Verify.**
-> apt list --installed | grep mariadb  
-> apt list --installed | grep galera  
+
+```shell
+apt list --installed | grep mariadb  
+apt list --installed | grep galera  
+```
 
 **Backup configuration file.**
-> cp /etc/mysql/mariadb.conf.d/50-server.cnf /etc/mysql/mariadb.conf.d/50-server.cnf.bak  
+
+```shell
+cp /etc/mysql/mariadb.conf.d/50-server.cnf /etc/mysql/mariadb.conf.d/50-server.cnf.bak  
+```
 
 ## Verify install successful
 
-> mysql -u root  
-> show global variables like 'datadir';  
-> select user();  
-> show create user root@localhost;  
+```shell
+mysql -u root  
+show global variables like 'datadir';  
+select user();  
+show create user root@localhost;  
+```
 
 **Create a local access user.**
-> create user user1@localhost identified via unix_socket;  
-> show create user user1@localhost;  
+
+```shell
+create user user1@localhost identified via unix_socket;  
+show create user user1@localhost;  
+```
 
 **Quit mariadb cli and create account.**  
-> groupadd user1  
-> useradd -g user1 user1  
-> su - user1  
-> mariadb  
+
+```shell
+groupadd user1  
+useradd -g user1 user1  
+su - user1  
+mariadb  
+```
 
 ## Innit a secure on galera-1, galera-2, galera-3 nodes
 
-> mariadb-secure-installation  
+mariadb-secure-installation  
 
 **Note**: All Y and setup password for root accout
 
 **Verify:**
-> mariadb  
-> show create user root@localhost;  
-> exit  
+
+```shell
+mariadb  
+show create user root@localhost;  
+exit  
+```
 
 **Login with password:**
-> mariadb -u root -p  
+
+```shell
+mariadb -u root -p  
+```
 
 ## Setup replication
 
-> vi /etc/mysql/mariadb.conf.d/50-server.cnf  
+```shell
+vi /etc/mysql/mariadb.conf.d/50-server.cnf  
+```
 
 *Comment:*
 
@@ -222,63 +250,87 @@ server_id=172
 ```
 
 **Save and restart mariadb.**
-> systemctl restart mariadb  
+
+```shell
+systemctl restart mariadb  
+```
 
 ## Master Node
 
 **Make sure mariadb-bin.\* existed (2 file).**
-> ls -lrt /var/lib/mysql  
+
+```shell
+ls -lrt /var/lib/mysql  
+```
 
 **Create a replication user.**
-> mariadb  
-> create user repl_user@'192.168.1.%' identified by 'password';  
-> grant replication slave on *.* to repl_user@'192.168.1.%';  
-> show grants for repl_user@'192.168.1.%';  
-> show binary logs;  
+
+```shell
+mariadb  
+create user repl_user@'192.168.1.%' identified by 'password';  
+grant replication slave on *.* to repl_user@'192.168.1.%';  
+show grants for repl_user@'192.168.1.%';  
+show binary logs;  
+```
 
 **Go back terminal for check.**  
+
 *mariadb-bin.000001 in list file of mysql folder.*  
 **Important:** *look on GTID and make sure it existed.*  
-> ls -lrt /var/lib/mysql  
-> mysqlbinlog -v mariadb-bin.000001 | less  
+
+```shell
+ls -lrt /var/lib/mysql  
+mysqlbinlog -v mariadb-bin.000001 | less  
+```
 
 *Make sure you will see position that shall the same in mariadb-bin.000001 file.*  
-*GTID is [gtid]-[serverid]-[position of transaction].*  
-> mariadb  
-> show master status;  
->select binlog_gtid_pos('mariadb-bin.000001', 673);  
+
+*GTID is [gtid]-[serverid]-[position of transaction].*
+
+```shell
+mariadb  
+show master status;  
+select binlog_gtid_pos('mariadb-bin.000001', 673);  
+```
 
 ## Slave Node
 
-> mariadb  
-> show master status;  
-> select binlog_gtid_pos('mariadb-bin.000001', 673);  
+```shell
+mariadb  
+show master status;  
+select binlog_gtid_pos('mariadb-bin.000001', 673);  
+```
 
 *It should empty.*  
 
-> set global gtid_slave_pos='';  
-
-> change master to master_host='192.168.1.171', master_port=3306, master_user='repl_user', master_password='password', master_use_gtid=current_pos;  
-
-> start slave;  
-> show slave status\G;  
+```shell
+set global gtid_slave_pos='';
+change master to master_host='192.168.1.171', master_port=3306, master_user='repl_user', master_password='password', master_use_gtid=current_pos;
+start slave;
+show slave status\G;
+```
 
 *Make sure dont have any error property.*  
 
 **Verify.**
-> show create user repl_user@'192.168.1.%';  
-> exit  
-> ls -lrt /var/lib/mysql  
-> mysqlbinlog -v mariadb-bin.000001 | less  
+
+```shell
+show create user repl_user@'192.168.1.%';  
+exit  
+ls -lrt /var/lib/mysql  
+mysqlbinlog -v mariadb-bin.000001 | less  
+```
 
 *Make sure it shall be the same with master node.*  
 
 ## Maxscale Node
 
-> wget <https://dlm.mariadb.com/2700606/MaxScale/22.08.3/packages/debian/bullseye/x86_64/maxscale-22.08.3-1.debian.bullseye.x86_64.deb>  
-> apt install libcurl4 -y  
-> dpkg -i maxscale-22.08.3-1.debian.bullseye.x86_64.deb  
-> vi /etc/maxscale.cnf  
+```shell
+wget <https://dlm.mariadb.com/2700606/MaxScale/22.08.3/packages/debian/bullseye/x86_64/maxscale-22.08.3-1.debian.bullseye.x86_64.deb 
+apt install libcurl4 -y  
+dpkg -i maxscale-22.08.3-1.debian.bullseye.x86_64.deb  
+vi /etc/maxscale.cnf  
+```
 
 ```conf
 # MaxScale documentation:
@@ -400,24 +452,32 @@ port=3306
 ```
 
 **Go on master node.**
-> maria  
-> create user maxmon_user@'%' identified by 'password';  
-> create user max_user@'%' identified by 'password';  
-> grant all on *.* to maxmon_user@'%';  
-> grant all on *.* to max_user@'%';  
+
+```shell
+maria  
+create user maxmon_user@'%' identified by 'password';
+create user max_user@'%' identified by 'password';
+grant all on *.* to maxmon_user@'%';
+grant all on *.* to max_user@'%';
+```
 
 *it's should testing evironment, LOL.*  
-> systemctl restart maxscale  
-> systemctl enable maxscale  
-> systemctl status maxscale  
-> tail -f /var/log/maxscale/maxscale.log  
-> maxctrl show maxscale  
-> maxctrl list services  
-> maxctrl list servers  
-> maxctrl list monitors  
+
+```shell
+systemctl restart maxscale  
+systemctl enable maxscale  
+systemctl status maxscale  
+tail -f /var/log/maxscale/maxscale.log  
+maxctrl show maxscale  
+maxctrl list services  
+maxctrl list servers  
+maxctrl list monitors  
+```
 
 *Make to back master.*
-> maxctrl call command mariamon switchover Mariadb-Monitor galera-1 Backup  
 
+```shell
+maxctrl call command mariamon switchover Mariadb-Monitor galera-1 Backup  
+```
 
 ## End
