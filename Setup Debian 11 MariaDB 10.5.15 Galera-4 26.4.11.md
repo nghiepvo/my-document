@@ -21,4 +21,7 @@ j or arrow next. Visual mode movement 3 lines below current line
 y Yanks(copies) the selected stuff in the register
 p Paste the contents after current line.  
   
- # All node.
+# Command of **all** node.
+
+> apt update  
+
