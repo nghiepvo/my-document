@@ -3,7 +3,7 @@
 ## Information PC and setup version
 
 - Debian 11  
-- MariaDB 10.5.15  
+- MariaDB 10.5.15
 - Galera-4 26.4.11  
 
 | IP            | Node name  |
@@ -18,13 +18,6 @@
 Use **Terminator** application on Linux.  
 
 **mysql client:** use ```Ctrl + L``` or ```\! cls``` for clear screen LOL.  
-
-### vim: copy and parse
-
-**Shift-v** starts visual mode and selects current line  
-**j** or arrow next. Visual mode movement 3 lines below current line  
-**y** Yanks(copies) the selected stuff in the register  
-**p** Paste the contents after current line.  
 
 ## Command galera-1, galera-2, galera-3 nodes
 
