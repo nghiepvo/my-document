@@ -38,16 +38,16 @@ vi /etc/hosts
 
 ```shell
 apt install postgresql postgresql-client -y
-systemctl enable postgresql
+/lib/systemd/systemd-sysv-install enable postgresql
 systemctl status postgresql
-SHOW data_directory;
-SHOW config_file;
-SHOW hba_file;
-SHOW log_directory ;
-SHOW log_filename ;
 su - postgres
 psql
 ALTER USER postgres PASSWORD 'Str0ngP@ssw0rd';
+SHOW data_directory;
+SHOW config_file;
+SHOW hba_file;
+SHOW log_directory;
+SHOW log_filename;
 exit
 ```
 
@@ -63,7 +63,7 @@ log_statement = 'all'
 log_directory = 'pg_log'
 log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
 logging_collector = on
-log_min_error_statement = error
+log_min_error_statement = info
 ```
 
 ```conf
