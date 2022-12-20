@@ -69,21 +69,10 @@ log_min_error_statement = info
 ```conf
 vi /etc/postgresql/15/main/pg_hba.conf
 
-
 # IPv4 local connections:
 host    all             all             127.0.0.1/32            scram-sha-256
 # Allow all access
 host    all             all             0.0.0.0/0               scram-sha-256
-```
-
-```conf
-vi /etc/postgresql/15/main/pg_hba.conf
-
-
-# IPv4 local connections:
-host    all             all             127.0.0.1/32            md5
-# Allow all access
-host    all             all             0.0.0.0/0               md5
 ```
 
 Save password on your PC. [Environment Variables](https://www.postgresql.org/docs/current/libpq-envars.html)  
