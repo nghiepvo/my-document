@@ -22,12 +22,13 @@ apt update && apt dist-upgrade -y
 apt install lsb-release gnupg2 wget vim -y
 apt-cache search postgresql | grep postgresql
 sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null
+wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null
 apt update
-vi /etc/hosts
 ```
 
 ```conf
+vi /etc/hosts
+
 ....
 192.168.1.160 pgpool-0
 192.168.1.161 pg-1
