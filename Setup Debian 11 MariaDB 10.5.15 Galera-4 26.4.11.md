@@ -15,9 +15,7 @@
 
 ## Tips
 
-Use **Terminator** application on Linux.  
 
-**mysql client:** use ```Ctrl + L``` or ```\! cls``` for clear screen LOL.  
 
 ## Command galera-1, galera-2, galera-3 nodes
 
