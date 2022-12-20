@@ -14,3 +14,19 @@ Use **Terminator** application on Linux.
 **p** Paste the contents after current line.  
 
 **/ or ?** enter the search pattern and hit Enter.  
+
+## Fix perl: warning
+
+```conf
+vi /etc/default/locale
+
+...
+LANGUAGE=en_US.UTF-8
+LANG=en_US.UTF-8
+LC_ALL=en_US.UTF-8
+```
+
+```shell
+locale-gen en_US.UTF-8
+dpkg-reconfigure locales
+```
