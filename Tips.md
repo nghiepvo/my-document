@@ -4,7 +4,7 @@ Use **Terminator** application on Linux.
 
 **mysql client:** use ```Ctrl + L``` or ```\! cls``` for clear screen LOL.  
 
-## vim 
+## vim
 
 ### Copy and parse
 
@@ -14,4 +14,3 @@ Use **Terminator** application on Linux.
 **p** Paste the contents after current line.  
 
 **/ or ?** enter the search pattern and hit Enter.  
-

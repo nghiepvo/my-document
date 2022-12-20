@@ -98,4 +98,3 @@ export PGUSER="postgres"
 ```shell
 systemctl restart postgresql
 ```
-
