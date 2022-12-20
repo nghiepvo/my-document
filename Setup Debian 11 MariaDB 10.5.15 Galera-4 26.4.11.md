@@ -13,10 +13,6 @@
 | 192.168.1.172 | galera-2   |
 | 192.168.1.173 | galera-3   |
 
-## Tips
-
-
-
 ## Command galera-1, galera-2, galera-3 nodes
 
 **Check.**  
