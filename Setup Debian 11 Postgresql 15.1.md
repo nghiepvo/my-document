@@ -56,7 +56,7 @@ vi /etc/postgresql/15/main/postgresql.conf
 
 
 ...
-listen_addresses = '*' 
+listen_addresses = '*'
 ...
 
 log_statement = 'all'
@@ -69,10 +69,24 @@ log_min_error_statement = info
 ```conf
 vi /etc/postgresql/15/main/pg_hba.conf
 
+...
+# Database administrative login by Unix domain socket
+local  all             postgres                                scram-sha-256
+
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+
+# "local" is for Unix domain socket connections only
+local   all             all                                     peer
 # IPv4 local connections:
 host    all             all             127.0.0.1/32            scram-sha-256
-# Allow all access
 host    all             all             0.0.0.0/0               scram-sha-256
+# IPv6 local connections:
+host    all             all             ::1/128                 scram-sha-256
+# Allow replication connections from localhost, by a user with the
+# replication privilege.
+local   replication     all                                     peer
+host    replication     all             127.0.0.1/32            scram-sha-256
+host    replication     all             ::1/128                 scram-sha-256
 ```
 
 Save password on your PC. [Environment Variables](https://www.postgresql.org/docs/current/libpq-envars.html)  
@@ -81,10 +95,37 @@ Save password on your PC. [Environment Variables](https://www.postgresql.org/doc
 vi .bashrc
 
 ...
-export PGPASSWORD="Str0ngP@ssw0rd"
 export PGUSER="postgres"
+export PGPASSWORD="Str0ngP@ssw0rd"
 ```
 
 ```shell
 systemctl restart postgresql
+# should login with root account without password
+psql
+```
+
+## Setup logical Replication
+
+```conf
+vi /etc/postgresql/15/main/postgresql.conf
+
+...
+
+wal_level = logical
+```
+
+```shell
+systemctl restart postgresql
+```
+
+### Node master
+
+```shell
+psql
+create database app_db;
+\c app_db
+create table table_1(id int primary key, name varchar);
+insert into table_1 values (generate_series(1,10), 'data-'||generate_series(1,10));
+select * from table_1;
 ```
