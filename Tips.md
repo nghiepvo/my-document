@@ -29,4 +29,5 @@ LC_ALL=en_US.UTF-8
 ```shell
 locale-gen en_US.UTF-8
 dpkg-reconfigure locales
+apt update
 ```

@@ -42,13 +42,15 @@ apt install postgresql postgresql-client -y
 systemctl status postgresql
 su - postgres
 psql
-ALTER USER postgres PASSWORD 'Str0ngP@ssw0rd';
+ALTER USER postgres PASSWORD '123456';
 SHOW data_directory;
 SHOW config_file;
 SHOW hba_file;
 SHOW log_directory;
 SHOW log_filename;
 exit
+# show main path of postgresql
+#ps aux | grep postgres | grep -- -D
 ```
 
 ```conf
@@ -61,9 +63,12 @@ listen_addresses = '*'
 
 log_statement = 'all'
 log_directory = 'pg_log'
-log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
+#tail -f /var/log/postgresql/postgresql-15-main.log
+#ls -lrtr /var/lib/postgresql/15/main/pg_log
+#tail -f  /var/lib/postgresql/15/main/pg_log/postgresql-xxxx-xx-xx.log
+log_filename = 'postgresql-%Y-%m-%d.log'
 logging_collector = on
-log_min_error_statement = info
+log_min_error_statement = warning
 ```
 
 ```conf
@@ -96,11 +101,12 @@ vi .bashrc
 
 ...
 export PGUSER="postgres"
-export PGPASSWORD="Str0ngP@ssw0rd"
+export PGPASSWORD="123456"
 ```
 
 ```shell
 systemctl restart postgresql
+# logout and login again.
 # should login with root account without password
 psql
 ```
@@ -119,7 +125,7 @@ wal_level = logical
 systemctl restart postgresql
 ```
 
-### Node master
+**Master node.**
 
 ```shell
 psql
@@ -128,4 +134,78 @@ create database app_db;
 create table table_1(id int primary key, name varchar);
 insert into table_1 values (generate_series(1,10), 'data-'||generate_series(1,10));
 select * from table_1;
+\q
+# trace log
+pg_dump -t table_1 -s app_db
+
+pg_dump -t table_1 -s app_db | psql -h pg-2 app_db
 ```
+
+**Slave node.**
+
+```shell
+create database app_db;
+```
+
+**Master node.**
+
+```shell
+# copy schema to other db
+pg_dump -t table_1 -s app_db | psql -h pg-2 app_db
+```
+
+**Slave node.**
+
+```shell
+\c app_db
+\dt
+```
+
+**Master node.**
+
+```shell
+\c app_db
+create publication app_pub for table table_1;
+```
+
+**Slave node.**
+
+```shell
+\c app_db
+create subcription app_sub connection 'dbname=app_db host=pg-1 user=postgres password=123456' publication app_pub;
+```
+
+**Testing for logical replication.**
+
+## Setup stream replication
+
+**Note:** Of course, we should clear all the pc
+
+**Master node.**
+
+```shell
+psql
+#CREATE ROLE repl_user WITH REPLICATION PASSWORD '123456' LOGIN;
+create user repl_user replication;
+ALTER USER repl_user PASSWORD '123456' LOGIN;
+
+create database app_db;
+\c app_db
+create table table_1(id int primary key, name varchar);
+insert into table_1 values (generate_series(1,10), 'data-'||generate_series(1,10));
+select * from table_1;
+```
+
+**Slave node.**
+
+```shell
+systemctl stop postgresql
+su - postgres
+rm -rf /var/lib/postgresql/15/main/*
+pg_basebackup -R -h pg-1 -U repl_user -D /var/lib/postgresql/15/main
+chmod 750 -R /var/lib/postgresql/15/main
+exit 
+systemctl restart postgresql
+```
+
+**Testing for stream replication.**
