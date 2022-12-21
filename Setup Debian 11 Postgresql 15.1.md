@@ -204,7 +204,7 @@ su - postgres
 rm -rf /var/lib/postgresql/15/main/*
 pg_basebackup -R -h pg-1 -U repl_user -D /var/lib/postgresql/15/main
 chmod 750 -R /var/lib/postgresql/15/main
-exit 
+exit
 systemctl restart postgresql
 ```
 

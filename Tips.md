@@ -31,3 +31,12 @@ locale-gen en_US.UTF-8
 dpkg-reconfigure locales
 apt update
 ```
+
+## View stored postgresql DB
+
+```shell
+psql
+SELECT oid from pg_database where datname = 'dbName';
+
+ls -lrha /var/lib/postgresql/15/main/base/
+```
