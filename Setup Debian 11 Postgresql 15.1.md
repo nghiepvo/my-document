@@ -209,3 +209,48 @@ systemctl restart postgresql
 ```
 
 **Testing for stream replication.**
+
+## Setup PGPool-II
+
+```shell
+
+apt list pgpool2 libpgpool2 postgresql-15-pgpool2 -a
+apt -y install pgpool2 libpgpool2 postgresql-15-pgpool2
+apt list --installed | grep pgpool2
+
+```
+
+```conf
+vi /etc/pgpool2/pgpool.conf
+
+...
+listen_addresses = '*'
+...
+port = 5432
+...
+socket_dir = '/var/run/postgresql'
+...
+backend_hostname0 = 'pg-1'
+backend_port0 = 5432
+backend_weight0 = 0
+backend_data_directory0 = '/data/pg-1/'
+
+...
+backend_hostname1 = 'pg-2'
+backend_port1 = 5432
+backend_weight1 = 1
+backend_data_directory1 = '/data/pg-2'
+...
+log_statement = on
+log_per_node_statement = on
+...
+pid_file_name = '/var/run/postgresql/pgpool.pid'
+...
+sr_check_period = 10
+sr_check_user = 'repl_user'
+sr_check_password = '123456'
+...
+health_check_period = 10
+health_check_user = 'repl_user'
+health_check_password = '123456'
+```
