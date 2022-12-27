@@ -53,7 +53,7 @@ find / -name filename
 passwd username
 ```
 
-## setup sudo
+## setup sudo and allow user run sudo without password
 
 ```shell
 apt install sudo -y
