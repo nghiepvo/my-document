@@ -52,3 +52,22 @@ find / -name filename
 ```shell
 passwd username
 ```
+
+## setup sudo
+
+```shell
+apt install sudo -y
+
+chmod 0777 /etc/sudoers
+```
+
+```conf
+vi /etc/sudoers
+# add end of line
+username     ALL=(ALL) NOPASSWD:ALL
+```
+
+```shell
+
+chmod 0755 /etc/sudoers
+```
