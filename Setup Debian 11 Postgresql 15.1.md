@@ -20,10 +20,10 @@
 ```shell
 apt update && apt dist-upgrade -y
 apt install lsb-release gnupg2 wget vim -y
-apt-cache search postgresql | grep postgresql
 sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 apt update
+
 ```
 
 ```conf
@@ -218,39 +218,33 @@ apt list pgpool2 libpgpool2 postgresql-15-pgpool2 -a
 apt -y install pgpool2 libpgpool2 postgresql-15-pgpool2
 apt list --installed | grep pgpool2
 
+chown -R postgres:postgres /usr/lib/postgresql/15/bin/
 ```
 
 ```conf
-vi /etc/pgpool2/pgpool.conf
+vi /etc/profile
 
 ...
-listen_addresses = '*'
-...
-port = 5432
-...
-socket_dir = '/var/run/postgresql'
-...
-backend_hostname0 = 'pg-1'
-backend_port0 = 5432
-backend_weight0 = 0
-backend_data_directory0 = '/data/pg-1/'
+export PGDATA="/var/lib/postgresql/15/main/"
+export PGARCHIVE="/var/lib/postgresql/15/archivedir"
+export PGTOOL="/usr/lib/postgresql/15/bin/"
+```
 
-...
-backend_hostname1 = 'pg-2'
-backend_port1 = 5432
-backend_weight1 = 1
-backend_data_directory1 = '/data/pg-2'
-...
-log_statement = on
-log_per_node_statement = on
-...
-pid_file_name = '/var/run/postgresql/pgpool.pid'
-...
-sr_check_period = 10
-sr_check_user = 'repl_user'
-sr_check_password = '123456'
-...
-health_check_period = 10
-health_check_user = 'repl_user'
-health_check_password = '123456'
+```shell
+# exit root and login again
+exist
+
+su - postgres
+
+mkdir $PGARCHIVE
+systemctl stop postgresql
+systemctl disable postgresql
+
+```
+
+```shell
+# pg-1
+rm -rf $PGDATA
+$PGTOOL/initdb -d $PGDATA
+#'cp "%p" "/var/lib/postgresql/15/archivedir/%f"'
 ```

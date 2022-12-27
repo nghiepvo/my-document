@@ -40,3 +40,15 @@ SELECT oid from pg_database where datname = 'dbName';
 
 ls -lrha /var/lib/postgresql/15/main/base/
 ```
+
+## find file
+
+```shell
+find / -name filename
+```
+
+## change PASS
+
+```shell
+passwd username
+```
