@@ -11,11 +11,603 @@ Ref: [Set Up a Highly Available PostgreSQL 13 Cluster on Ubuntu 20.04](https://w
 - HAProxy
 - Keepalived
 
+| HOSTNAME  | IP ADDRESS    | PACKAGES TO BE INSTALLED                                  |
+|-----------|---------------|-----------------------------------------------------------|
+| patroni-1 | 192.168.1.181 | PostgreSQL, PgBouncer, Patroni, etcd, haproxy, keepalived |
+| patroni-2 | 192.168.1.182 | PostgreSQL, PgBouncer, Patroni, etcd, haproxy, keepalived |
+| patroni-3 | 192.168.1.183 | PostgreSQL, PgBouncer, Patroni, etcd, haproxy, keepalived |
 
-| IP            | Node name  |
-|---------------|------------|
-| 192.168.1.180 | haproxy    |
-| 192.168.1.181 | patroni-1  |
-| 192.168.1.182 | patroni-2  |
-| 192.168.1.183 | patroni-3  |
+```conf
+vi /etc/hosts
 
+...
+192.168.1.181 patroni-1
+192.168.1.182 patroni-2
+192.168.1.183 patroni-3
+```
+
+**Initial PostgreSQL.**
+
+```shell
+apt update && apt dist-upgrade -y
+apt install lsb-release gnupg2 wget vim -y
+sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+apt update
+```
+
+**Install PostgreSQL.**
+
+```shell
+apt -y install postgresql postgresql-client -y
+systemctl stop postgresql
+
+systemctl disable postgresql
+
+ln -s /usr/lib/postgresql/13/bin/* /usr/sbin/
+
+su postgres
+
+rm -rf /var/lib/postgresql/13/main/*
+
+exit
+```
+
+**Install etcd.**
+
+```shell
+apt -y install etcd
+
+systemctl stop etcd
+
+systemctl disable etcd
+
+rm -rf /var/lib/etcd/default
+
+mv /etc/default/etcd /etc/default/etcd-orig
+```
+
+**Configure etcd on patroni-1.**
+
+```conf
+vi /etc/default/etcd
+
+ETCD_NAME=patroni-1
+ETCD_DATA_DIR="/var/lib/etcd/patroni-1"
+ETCD_LISTEN_PEER_URLS="http://192.168.1.181:2380"
+ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379"
+ETCD_INITIAL_ADVERTISE_PEER_URLS="http://192.168.1.181:2380"
+ETCD_INITIAL_CLUSTER="patroni-1=http://192.168.1.181:2380,patroni-2=http://192.168.1.182:2380,patroni-3=http://192.168.1.183:2380"
+ETCD_INITIAL_CLUSTER_STATE="new"
+ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
+ETCD_ADVERTISE_CLIENT_URLS="http://0.0.0.0:2379"
+ETCD_ENABLE_V2="true"
+```
+
+**Configure etcd on patroni-2.**
+
+```conf
+vi /etc/default/etcd
+
+ETCD_NAME=patroni-2
+ETCD_DATA_DIR="/var/lib/etcd/patroni-2"
+ETCD_LISTEN_PEER_URLS="http://192.168.1.182:2380"
+ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379"
+ETCD_INITIAL_ADVERTISE_PEER_URLS="http://192.168.1.181:2380"
+ETCD_INITIAL_CLUSTER="patroni-1=http://192.168.1.181:2380,patroni-2=http://192.168.1.182:2380,patroni-3=http://192.168.1.183:2380"
+ETCD_INITIAL_CLUSTER_STATE="new"
+ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
+ETCD_ADVERTISE_CLIENT_URLS="http://0.0.0.0:2379"
+ETCD_ENABLE_V2="true"
+```
+
+**Configure etcd on patroni-3.**
+
+```conf
+vi /etc/default/etcd
+
+ETCD_NAME=patroni-3
+ETCD_DATA_DIR="/var/lib/etcd/patroni-3"
+ETCD_LISTEN_PEER_URLS="http://192.168.1.183:2380"
+ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379"
+ETCD_INITIAL_ADVERTISE_PEER_URLS="http://192.168.1.181:2380"
+ETCD_INITIAL_CLUSTER="patroni-1=http://192.168.1.181:2380,patroni-2=http://192.168.1.182:2380,patroni-3=http://192.168.1.183:2380"
+ETCD_INITIAL_CLUSTER_STATE="new"
+ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
+ETCD_ADVERTISE_CLIENT_URLS="http://0.0.0.0:2379"
+ETCD_ENABLE_V2="true"
+```
+
+**Set variable environment.**
+
+```conf
+vi ~/.profile
+
+...
+export PGDATA="/var/lib/postgresql/15/data"
+export ETCDCTL_API="3"
+export PATRONI_ETCD_URL="http://127.0.0.1:2379"
+export PATRONI_SCOPE="pg_cluster"
+patroni-1=192.168.1.181 
+patroni-2=192.168.1.182 
+patroni-3=192.168.1.183
+ENDPOINTS=$patroni1:2379,$patroni2:2379,$patroni3:2379
+```
+
+```shell
+source ~/.profile
+```
+
+**Start and verify etcd.**
+
+```shell
+systemctl start etcd
+systemctl status etcd
+
+etcdctl endpoint status --write-out=table --endpoints=$ENDPOINTS
+```
+
+**Install Patroni.**
+
+```shell
+apt -y install python3 python3-pip python3-dev libpq-dev
+
+pip3 install launchpadlib
+
+pip3 install --upgrade setuptools
+
+pip3 install psycopg2
+
+pip3 install python-etcd
+
+apt -y install patroni
+
+systemctl stop patroni
+
+systemctl disable patroni
+```
+
+**Configure Patroni-1.**
+
+```conf
+# create
+vi /etc/patroni/config.yml
+
+scope: pg_cluster
+namespace: /service/
+name: patroni-1
+
+restapi:
+    listen: 192.168.1.181:8008
+    connect_address: 192.168.1.181:8008
+
+etcd:
+    hosts: 192.168.1.181:2379,192.168.1.182:2379,192.168.1.184:2379
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+      use_slots: true
+      parameters:
+
+  initdb:
+  - encoding: UTF8
+  - data-checksums
+
+  pg_hba:
+  - host replication replicator 127.0.0.1/32 md5
+  - host replication replicator 192.168.1.181/0 md5
+  - host replication replicator 192.168.1.182/0 md5
+  - host replication replicator 192.168.1.184/0 md5
+  - host all all 0.0.0.0/0 md5
+
+  users:
+    admin:
+      password: 123456
+      options:
+        - createrole
+        - createdb
+
+postgresql:
+  listen: 192.168.1.181:5432
+  connect_address: 192.168.1.181:5432
+  data_dir: /var/lib/postgresql/15/main
+  bin_dir: /usr/lib/postgresql/15/bin
+  pgpass: /tmp/pgpass
+  authentication:
+    replication:
+      username: replicator
+      password: 123456
+    superuser:
+      username: postgres
+      password: 123456
+
+tags:
+    nofailover: false
+    noloadbalance: false
+    clonefrom: false
+    nosync: false
+```
+
+```shell
+systemctl start patroni
+systemctl status patroni
+```
+
+**Configure Patroni-2.**
+
+```conf
+# create
+vi /etc/patroni/config.yml
+
+scope: pg_cluster
+namespace: /service/
+name: patroni-2
+
+restapi:
+    listen: 192.168.1.182:8008
+    connect_address: 192.168.1.182:8008
+
+etcd:
+    hosts: 192.168.1.181:2379,192.168.1.182:2379,192.168.1.184:2379
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+      use_slots: true
+      parameters:
+
+  initdb:
+  - encoding: UTF8
+  - data-checksums
+
+  pg_hba:
+  - host replication replicator 127.0.0.1/32 md5
+  - host replication replicator 192.168.1.181/0 md5
+  - host replication replicator 192.168.1.182/0 md5
+  - host replication replicator 192.168.1.184/0 md5
+  - host all all 0.0.0.0/0 md5
+
+  users:
+    admin:
+      password: 123456
+      options:
+        - createrole
+        - createdb
+
+postgresql:
+  listen: 192.168.1.182:5432
+  connect_address: 192.168.1.182:5432
+  data_dir: /var/lib/postgresql/15/main
+  bin_dir: /usr/lib/postgresql/15/bin
+  pgpass: /tmp/pgpass
+  authentication:
+    replication:
+      username: replicator
+      password: 123456
+    superuser:
+      username: postgres
+      password: 123456
+
+tags:
+    nofailover: false
+    noloadbalance: false
+    clonefrom: false
+    nosync: false
+```
+
+```shell
+systemctl start patroni
+systemctl status patroni
+```
+
+**Configure Patroni-3.**
+
+```conf
+# create
+vi /etc/patroni/config.yml
+
+scope: pg_cluster
+namespace: /service/
+name: patroni-3
+
+restapi:
+    listen: 192.168.1.183:8008
+    connect_address: 192.168.1.183:8008
+
+etcd:
+    hosts: 192.168.1.181:2379,192.168.1.182:2379,192.168.1.184:2379
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+      use_slots: true
+      parameters:
+
+  initdb:
+  - encoding: UTF8
+  - data-checksums
+
+  pg_hba:
+  - host replication replicator 127.0.0.1/32 md5
+  - host replication replicator 192.168.1.181/0 md5
+  - host replication replicator 192.168.1.182/0 md5
+  - host replication replicator 192.168.1.184/0 md5
+  - host all all 0.0.0.0/0 md5
+
+  users:
+    admin:
+      password: 123456
+      options:
+        - createrole
+        - createdb
+
+postgresql:
+  listen: 192.168.1.183:5432
+  connect_address: 192.168.1.183:5432
+  data_dir: /var/lib/postgresql/15/main
+  bin_dir: /usr/lib/postgresql/15/bin
+  pgpass: /tmp/pgpass
+  authentication:
+    replication:
+      username: replicator
+      password: 123456
+    superuser:
+      username: postgres
+      password: 123456
+
+tags:
+    nofailover: false
+    noloadbalance: false
+    clonefrom: false
+    nosync: false
+```
+
+```shell
+systemctl start patroni
+systemctl status patroni
+```
+
+**Install PgBouncer.**
+
+```shell
+apt -y install pgbouncer
+
+systemctl stop pgbouncer
+
+systemctl disable pgbouncer
+```
+
+**Configure PgBouncer.**
+
+```shell
+cp -p /etc/pgbouncer/pgbouncer.ini /etc/pgbouncer/pgbouncer.ini.orig
+```
+
+```conf
+vi /etc/pgbouncer/pgbouncer.ini
+
+#Add your database in [databases] section like below:
+* = host=192.168.1.181 port=5432 dbname=postgres
+
+#and change listen_addr=localhost to listen_addr=*
+listen_addr = *
+```
+
+```shell
+
+su postgres
+
+psql -Atq -h patroni1 -p 5432 -U postgres -d postgres -c "SELECT concat('\"', usename, '\" \"', passwd, '\"') FROM pg_shadow" >> /etc/pgbouncer/userlist.txt
+
+exit
+
+systemctl start pgbouncer
+systemctl status pgbouncer
+```
+
+*Make sure you repeat the same on each node before proceeding to next.*
+
+**Install Keepalived.**
+
+```shell
+apt -y install keepalived
+
+systemctl stop keepalived
+
+systemctl disable keepalived
+```
+
+**Configure Keepalived.**
+
+```conf
+vi /etc/sysctl.conf
+
+net.ipv4.ip_nonlocal_bind = 1
+net.ipv4.ip_forward = 1
+```
+
+```shell
+sysctl --system
+sysctl -p
+```
+
+```conf
+#create on patroni-1
+vi  /etc/keepalived/keepalived.conf
+
+vrrp_script chk_haproxy {
+        script "pkill -0 haproxy"
+        interval 5
+        weight -4
+        fall 2
+        rise 1
+}
+
+vrrp_script chk_lb {
+        script "pkill -0 keepalived"
+        interval 1
+        weight 6
+        fall 2
+        rise 1
+}
+
+vrrp_script chk_servers {
+        script "echo 'GET /are-you-ok' | nc 127.0.0.1 7000 | grep -q '200 OK'"
+        interval 2
+        weight 2
+        fall 2
+        rise 2
+}
+
+vrrp_instance vrrp_1 {
+        interface enp0s3
+        state MASTER
+        virtual_router_id 51
+        priority 101
+        virtual_ipaddress_excluded {
+                192.168.1.180
+        }
+        track_interface {
+                enp0s3 weight -2
+        }
+        track_script {
+                chk_haproxy
+                chk_lb
+        }
+}
+```
+
+```conf
+#create on patroni-2
+vi  /etc/keepalived/keepalived.conf
+
+vrrp_script chk_haproxy {
+        script "pkill -0 haproxy"
+        interval 5
+        weight -4
+        fall 2
+        rise 1
+}
+
+vrrp_script chk_lb {
+        script "pkill -0 keepalived"
+        interval 1
+        weight 6
+        fall 2
+        rise 1
+}
+
+vrrp_script chk_servers {
+        script "echo 'GET /are-you-ok' | nc 127.0.0.1 7000 | grep -q '200 OK'"
+        interval 2
+        weight 2
+        fall 2
+        rise 2
+}
+
+vrrp_instance vrrp_1 {
+        interface enp0s3
+        state BACKUP
+        virtual_router_id 51
+        priority 100
+        virtual_ipaddress_excluded {
+                192.168.1.180
+        }
+        track_interface {
+                enp0s3 weight -2
+        }
+        track_script {
+                chk_haproxy
+                chk_lb
+        }
+}
+```
+
+```conf
+#create on patroni-3
+vi  /etc/keepalived/keepalived.conf
+
+vrrp_script chk_haproxy {
+        script "pkill -0 haproxy"
+        interval 5
+        weight -4
+        fall 2
+        rise 1
+}
+
+vrrp_script chk_lb {
+        script "pkill -0 keepalived"
+        interval 1
+        weight 6
+        fall 2
+        rise 1
+}
+
+vrrp_script chk_servers {
+        script "echo 'GET /are-you-ok' | nc 127.0.0.1 7000 | grep -q '200 OK'"
+        interval 2
+        weight 2
+        fall 2
+        rise 2
+}
+
+vrrp_instance vrrp_1 {
+        interface enp0s3
+        state BACKUP
+        virtual_router_id 51
+        priority 99
+        virtual_ipaddress_excluded {
+                192.168.1.180
+        }
+        track_interface {
+                enp0s3 weight -2
+        }
+        track_script {
+                chk_haproxy
+                chk_lb
+        }
+}
+```
+
+*start and verify on patroni-1 node.*
+
+```shell
+systemctl start keepalived
+
+ip addr show enp0s3
+```
+
+**Install HAProxy.**
+
+```shell
+sudo apt -y install haproxy
+
+sudo systemctl stop haproxy
+
+sudo systemctl disable haproxy
+```
+
+**Configure Keepalived.**
+
+```conf
+
+```
+
+```shell
+```
