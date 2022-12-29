@@ -71,3 +71,19 @@ username     ALL=(ALL) NOPASSWD:ALL
 
 chmod 0755 /etc/sudoers
 ```
+## set variable environment all user
+
+```conf
+vi /etc/profile
+...
+export PGDATA="/var/lib/postgresql/15/data"
+export ETCDCTL_API="3"
+export PATRONI_ETCD_URL="http://127.0.0.1:2379"
+export PATRONI_SCOPE="pg_cluster"
+patroni-1=192.168.1.181
+patroni-2=192.168.1.182
+patroni-3=192.168.1.183
+ENDPOINTS=$patroni1:2379,$patroni2:2379,$patroni3:2379
+```
+
+
