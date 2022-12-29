@@ -18,3 +18,4 @@ Ref: https://www.techsupportpk.com/2022/01/set-up-highly-available-postgresql13-
 | 192.168.1.181 | patroni-1  |
 | 192.168.1.182 | patroni-2  |
 | 192.168.1.183 | patroni-3  |
+
