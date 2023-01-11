@@ -43,9 +43,9 @@ systemctl status postgresql
 su - postgres
 psql
 ALTER USER postgres PASSWORD '123456';
-SHOW data_directory;
-SHOW config_file;
-SHOW hba_file;
+SHOW data_directory; # /var/lib/postgresql/15/main
+SHOW config_file; # /etc/postgresql/15/main/postgresql.conf
+SHOW hba_file; #/etc/postgresql/15/main/pg_hba.conf
 SHOW log_directory;
 SHOW log_filename;
 exit
@@ -219,6 +219,7 @@ apt -y install pgpool2 libpgpool2 postgresql-15-pgpool2
 apt list --installed | grep pgpool2
 
 chown -R postgres:postgres /usr/lib/postgresql/15/bin/
+ln -s /usr/lib/postgresql/15/bin/* /usr/sbin/
 ```
 
 ```conf
@@ -245,7 +246,7 @@ systemctl disable postgresql
 ```shell
 # pg-1
 rm -rf $PGDATA
-$PGTOOL/initdb -d $PGDATA
+initdb -d $PGDATA
 #'cp "%p" "/var/lib/postgresql/15/archivedir/%f"'
 chown postgres:postgres /etc/pgpool2/{failover.sh,follow_primary.sh}
 ```
@@ -259,9 +260,11 @@ pg-1:5432:postgres:postgres:123456
 pg-2:5432:postgres:postgres:123456
 pg-3:5432:postgres:postgres:123456
 
-#'/etc/pgpool2/failover.sh %d %h %p %D %m %H %M %P %r %R %N %S'
+#failover_command ='/etc/pgpool2/failover.sh %d %h %p %D %m %H %M %P %r %R %N %S'
 #follow_primary_command = '/etc/pgpool2/follow_primary.sh %d %h %p %D %m %H %M %P %r %R'
 
 #/usr/lib/postgresql/15
 #echo 'pgpool:'`pg_md5 PCP password` >> /etc/pgpool2/pcp.conf
+
+#ip link set ens19 up
 ```

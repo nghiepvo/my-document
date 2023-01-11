@@ -40,15 +40,16 @@ apt update
 
 ```shell
 apt -y install postgresql postgresql-client -y
+
 systemctl stop postgresql
 
 systemctl disable postgresql
 
-ln -s /usr/lib/postgresql/13/bin/* /usr/sbin/
+ln -s /usr/lib/postgresql/15/bin/* /usr/sbin/
 
-su postgres
+su - postgres
 
-rm -rf /var/lib/postgresql/13/main/*
+rm -rf /var/lib/postgresql/15/main/*
 
 exit
 ```
@@ -72,12 +73,12 @@ mv /etc/default/etcd /etc/default/etcd-orig
 ```conf
 vi /etc/default/etcd
 
-ETCD_NAME=patroni-1
-ETCD_DATA_DIR="/var/lib/etcd/patroni-1"
+ETCD_NAME="patroni1"
+ETCD_DATA_DIR="/var/lib/etcd/patroni1"
 ETCD_LISTEN_PEER_URLS="http://192.168.1.181:2380"
 ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379"
 ETCD_INITIAL_ADVERTISE_PEER_URLS="http://192.168.1.181:2380"
-ETCD_INITIAL_CLUSTER="patroni-1=http://192.168.1.181:2380,patroni-2=http://192.168.1.182:2380,patroni-3=http://192.168.1.183:2380"
+ETCD_INITIAL_CLUSTER="patroni1=http://192.168.1.181:2380,patroni2=http://192.168.1.182:2380,patroni3=http://192.168.1.183:2380"
 ETCD_INITIAL_CLUSTER_STATE="new"
 ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
 ETCD_ADVERTISE_CLIENT_URLS="http://0.0.0.0:2379"
@@ -89,12 +90,12 @@ ETCD_ENABLE_V2="true"
 ```conf
 vi /etc/default/etcd
 
-ETCD_NAME=patroni-2
-ETCD_DATA_DIR="/var/lib/etcd/patroni-2"
+ETCD_NAME=patroni2
+ETCD_DATA_DIR="/var/lib/etcd/patroni2"
 ETCD_LISTEN_PEER_URLS="http://192.168.1.182:2380"
 ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379"
-ETCD_INITIAL_ADVERTISE_PEER_URLS="http://192.168.1.181:2380"
-ETCD_INITIAL_CLUSTER="patroni-1=http://192.168.1.181:2380,patroni-2=http://192.168.1.182:2380,patroni-3=http://192.168.1.183:2380"
+ETCD_INITIAL_ADVERTISE_PEER_URLS="http://192.168.1.182:2380"
+ETCD_INITIAL_CLUSTER="patroni1=http://192.168.1.181:2380,patroni2=http://192.168.1.182:2380,patroni3=http://192.168.1.183:2380"
 ETCD_INITIAL_CLUSTER_STATE="new"
 ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
 ETCD_ADVERTISE_CLIENT_URLS="http://0.0.0.0:2379"
@@ -106,12 +107,12 @@ ETCD_ENABLE_V2="true"
 ```conf
 vi /etc/default/etcd
 
-ETCD_NAME=patroni-3
-ETCD_DATA_DIR="/var/lib/etcd/patroni-3"
+ETCD_NAME=patroni3
+ETCD_DATA_DIR="/var/lib/etcd/patroni3"
 ETCD_LISTEN_PEER_URLS="http://192.168.1.183:2380"
 ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379"
-ETCD_INITIAL_ADVERTISE_PEER_URLS="http://192.168.1.181:2380"
-ETCD_INITIAL_CLUSTER="patroni-1=http://192.168.1.181:2380,patroni-2=http://192.168.1.182:2380,patroni-3=http://192.168.1.183:2380"
+ETCD_INITIAL_ADVERTISE_PEER_URLS="http://192.168.1.183:2380"
+ETCD_INITIAL_CLUSTER="patroni1=http://192.168.1.181:2380,patroni2=http://192.168.1.182:2380,patroni3=http://192.168.1.183:2380"
 ETCD_INITIAL_CLUSTER_STATE="new"
 ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
 ETCD_ADVERTISE_CLIENT_URLS="http://0.0.0.0:2379"
@@ -124,7 +125,7 @@ ETCD_ENABLE_V2="true"
 vi ~/.profile
 
 ...
-export PGDATA="/var/lib/postgresql/15/data"
+export PGDATA="/var/lib/postgresql/15/main"
 export ETCDCTL_API="3"
 export PATRONI_ETCD_URL="http://127.0.0.1:2379"
 export PATRONI_SCOPE="pg_cluster"
@@ -138,7 +139,7 @@ ENDPOINTS=$patroni1:2379,$patroni2:2379,$patroni3:2379
 source ~/.profile
 ```
 
-**Start and verify etcd.**
+**Start from patroni-1,patroni-2,patroni-3 in the step by step and verify etcd.**
 
 ```shell
 systemctl start etcd
@@ -175,14 +176,14 @@ vi /etc/patroni/config.yml
 
 scope: pg_cluster
 namespace: /service/
-name: patroni-1
+name: "patroni-1"
 
 restapi:
     listen: 192.168.1.181:8008
     connect_address: 192.168.1.181:8008
 
 etcd:
-    hosts: 192.168.1.181:2379,192.168.1.182:2379,192.168.1.184:2379
+    hosts: 192.168.1.181:2379,192.168.1.182:2379,192.168.1.183:2379
 
 bootstrap:
   dcs:
@@ -203,12 +204,12 @@ bootstrap:
   - host replication replicator 127.0.0.1/32 md5
   - host replication replicator 192.168.1.181/0 md5
   - host replication replicator 192.168.1.182/0 md5
-  - host replication replicator 192.168.1.184/0 md5
+  - host replication replicator 192.168.1.183/0 md5
   - host all all 0.0.0.0/0 md5
 
   users:
     admin:
-      password: 123456
+      password: "123456"
       options:
         - createrole
         - createdb
@@ -222,10 +223,10 @@ postgresql:
   authentication:
     replication:
       username: replicator
-      password: 123456
+      password: "123456"
     superuser:
       username: postgres
-      password: 123456
+      password: "123456"
 
 tags:
     nofailover: false
@@ -247,14 +248,14 @@ vi /etc/patroni/config.yml
 
 scope: pg_cluster
 namespace: /service/
-name: patroni-2
+name: "patroni-2"
 
 restapi:
     listen: 192.168.1.182:8008
     connect_address: 192.168.1.182:8008
 
 etcd:
-    hosts: 192.168.1.181:2379,192.168.1.182:2379,192.168.1.184:2379
+    hosts: 192.168.1.181:2379,192.168.1.182:2379,192.168.1.183:2379
 
 bootstrap:
   dcs:
@@ -275,12 +276,12 @@ bootstrap:
   - host replication replicator 127.0.0.1/32 md5
   - host replication replicator 192.168.1.181/0 md5
   - host replication replicator 192.168.1.182/0 md5
-  - host replication replicator 192.168.1.184/0 md5
+  - host replication replicator 192.168.1.183/0 md5
   - host all all 0.0.0.0/0 md5
 
   users:
     admin:
-      password: 123456
+      password: "123456"
       options:
         - createrole
         - createdb
@@ -294,10 +295,10 @@ postgresql:
   authentication:
     replication:
       username: replicator
-      password: 123456
+      password: "123456"
     superuser:
       username: postgres
-      password: 123456
+      password: "123456"
 
 tags:
     nofailover: false
@@ -319,7 +320,7 @@ vi /etc/patroni/config.yml
 
 scope: pg_cluster
 namespace: /service/
-name: patroni-3
+name: "patroni-3"
 
 restapi:
     listen: 192.168.1.183:8008
@@ -347,12 +348,12 @@ bootstrap:
   - host replication replicator 127.0.0.1/32 md5
   - host replication replicator 192.168.1.181/0 md5
   - host replication replicator 192.168.1.182/0 md5
-  - host replication replicator 192.168.1.184/0 md5
+  - host replication replicator 192.168.1.183/0 md5
   - host all all 0.0.0.0/0 md5
 
   users:
     admin:
-      password: 123456
+      password: "123456"
       options:
         - createrole
         - createdb
@@ -366,10 +367,10 @@ postgresql:
   authentication:
     replication:
       username: replicator
-      password: 123456
+      password: "123456"
     superuser:
       username: postgres
-      password: 123456
+      password: "123456"
 
 tags:
     nofailover: false
@@ -402,6 +403,7 @@ cp -p /etc/pgbouncer/pgbouncer.ini /etc/pgbouncer/pgbouncer.ini.orig
 ```conf
 vi /etc/pgbouncer/pgbouncer.ini
 
+# replace it for each node 192.168.1.182, 192.168.1.183
 #Add your database in [databases] section like below:
 * = host=192.168.1.181 port=5432 dbname=postgres
 
@@ -411,9 +413,11 @@ listen_addr = *
 
 ```shell
 
-su postgres
+su - postgres
 
-psql -Atq -h patroni1 -p 5432 -U postgres -d postgres -c "SELECT concat('\"', usename, '\" \"', passwd, '\"') FROM pg_shadow" >> /etc/pgbouncer/userlist.txt
+psql -Atq -h patroni-1 -p 5432 -U postgres -d postgres -c "SELECT concat('\"', usename, '\" \"', passwd, '\"') FROM pg_shadow" >> /etc/pgbouncer/userlist.txt
+
+cat /etc/pgbouncer/userlist.txt
 
 exit
 

@@ -71,6 +71,7 @@ username     ALL=(ALL) NOPASSWD:ALL
 
 chmod 0755 /etc/sudoers
 ```
+
 ## set variable environment all user
 
 ```conf
