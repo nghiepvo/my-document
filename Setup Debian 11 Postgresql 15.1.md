@@ -270,3 +270,23 @@ pg-3:5432:postgres:postgres:123456
 
 #ip link set ens19 up
 ```
+
+
+```conf
+# repmgr
+
+node_id=1
+node_name='pg-1'
+conninfo='host=192.168.1.161 user=repmgr dbname=repmgr connect_timeout=2'
+data_directory='/var/lib/postgresql/15/main'
+
+node_id=2
+node_name='pg-2'
+conninfo='host=192.168.1.162 user=repmgr dbname=repmgr connect_timeout=2'
+data_directory='/var/lib/postgresql/15/main'
+
+node_id=3
+node_name='pg-3'
+conninfo='host=192.168.1.163 user=repmgr dbname=repmgr connect_timeout=2'
+data_directory='/var/lib/postgresql/15/main'
+```
