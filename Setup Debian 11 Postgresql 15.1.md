@@ -19,9 +19,11 @@
 
 ```shell
 apt update && apt dist-upgrade -y
-apt install lsb-release gnupg2 wget vim -y
+apt install lsb-release gnupg2 wget vim curl -y
 sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+
+curl https://dl.enterprisedb.com/default/release/get/deb | bash
 apt update
 
 ```
