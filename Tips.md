@@ -17,19 +17,14 @@ Use **Terminator** application on Linux.
 
 ## Fix perl: warning
 
-```conf
-vi /etc/default/locale
-
-...
-LANGUAGE=en_US.UTF-8
-LANG=en_US.UTF-8
-LC_ALL=en_US.UTF-8
-```
-
 ```shell
+export LANGUAGE=en_US.UTF-8
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+sudo locale-gen vi_VN.UTF-8
+sudo locale-gen en_US.UTF-8 
 locale-gen en_US.UTF-8
 dpkg-reconfigure locales
-apt update
 ```
 
 ## View stored postgresql DB

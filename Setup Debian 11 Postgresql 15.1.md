@@ -228,7 +228,7 @@ ln -s /usr/lib/postgresql/15/bin/* /usr/sbin/
 vi /etc/profile
 
 ...
-export PGDATA="/var/lib/postgresql/15/main/"
+export PGDATA="/var/lib/postgresql/15/main"
 export PGARCHIVE="/var/lib/postgresql/15/archivedir"
 export PGTOOL="/usr/lib/postgresql/15/bin/"
 ```
@@ -279,8 +279,8 @@ pg-3:5432:postgres:postgres:123456
 
 apt install postgresql-15 -y
 systemctl stop postgresql
-/lib/systemd/systemd-sysv-install disable postgresql
-
+systemctl disable postgresql
+rm -rf /var/lib/postgresql/15/main/*
 
 # Import PATH 
 # vi /etc/profile
@@ -288,6 +288,14 @@ if ...
     PATH=....
 else
     PATH = /usr/local/sbin:/usr/sbin:.... 
+...
+export PGDATA="/var/lib/postgresql/15/main"
+alias pgctl='/usr/lib/postgresql/15/bin/pg_ctl -D /var/lib/postgresql/15/main'
+alias rep='repmgr -f /etc/repmgr/15/repmgr.conf'
+alias pg='su - postgres'
+alias checkprimary='psql "host=192.168.1.161 user=repmgr dbname=repmgr connect_timeout=2"'
+
+# exit and login again for effect alias and export
 
 # install sudoes, and set password for postgres
 apt install sudo -y
@@ -295,56 +303,83 @@ chmod 0755 /etc/sudoers
 
 passwd postgres
 
-#vi /etc/sudoers
-username     ALL=(ALL:ALL) ALL
+# vi /etc/sudoers
+postgres ALL=(ALL:ALL) ALL
 
 chown -R postgres:postgres /usr/lib/postgresql/15/bin/
 
-su - postgres
 # import postgresql tool
+ln -s /usr/lib/postgresql/15/bin/* /usr/sbin/
 
-sudo ln -s /usr/lib/postgresql/15/bin/* /usr/sbin/
-
-systemctl stop postgresql
-sudo rm -rf /var/lib/postgresql/15/main/*
-
-initdb /var/lib/postgresql/15/main
-
-# su - postgres -c "/usr/lib/postgresql/15/bin/initdb /var/lib/postgresql/15/main"
-pg_ctl -D /var/lib/postgresql/15/main status
 
 # make some run file
-#vi /etc/postgresql/15/main/start.sh
+# vi /etc/postgresql/15/main/start.sh
 su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D /var/lib/postgresql/15/main start"
 # chmod +x /etc/postgresql/15/main/start.sh
 
-#vi /run/postgresql/stop.sh
+# vi /etc/postgresql/15/main/stop.sh
 su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D /var/lib/postgresql/15/main stop"
 # chmod +x /etc/postgresql/15/main/stop.sh
 
-#vi /etc/postgresql/15/main/reload.sh
-su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D /var/lib/postgresql/15/main reload"
-# chmod +x /etc/postgresql/15/main/reload.sh
-
 
 # create a service systemctl
-sudo vi /lib/systemd/system/pg_cluster.service
+# vi /lib/systemd/system/pg_cluster.service
+
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          pg_cluster
+# Required-Start:    $all
+# Required-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:
+# Short-Description: pg_ctl runner.
+### END INIT INFO
 
 [Unit]
 Description=PG Cluster 15 (pg_ctl -D /var/lib/postgresql/15/main status)
+StartLimitIntervalSec=400
+StartLimitBurst=3
+After=network.target
 
 [Service]
 Type=simple
 ExecStart=/bin/bash /etc/postgresql/15/main/start.sh
+RemainAfterExit=true
+ExecStop=/bin/bash /etc/postgresql/15/main/stop.sh
+StandardOutput=journal
+PIDFile=/run/postgres/pg_cluster.pid
 
 [Install]
 WantedBy=multi-user.target
-
 # -------
-sudo systemctl daemon-reload
-/lib/systemd/systemd-sysv-install enable postgresql
-sudo systemctl start pg_cluster
-sudo systemctl status pg_cluster
+
+systemctl daemon-reload
+systemctl enable pg_cluster
+# if have any error please run sudo rm -f /etc/init.d/pg_cluster
+systemctl start pg_cluster
+systemctl status pg_cluster
+
+
+# Primary and Witness
+
+su - postgres
+
+initdb $PGDATA
+
+# vi /var/lib/postgresql/15/main/postgresql.conf
+listen_addresses = '*' 
+max_wal_senders = 10
+max_replication_slots = 10
+wal_level = 'replica'
+hot_standby = on
+archive_mode = on
+archive_command = '/bin/true'
+wal_log_hints = on
+
+pgctl reload
+
+# Primary and standby
+apt install postgresql-15-repmgr -y
 
 # mkdir -p /etc/repmgr/15
 # vi /etc/repmgr/15/repmgr.conf
@@ -365,18 +400,15 @@ node_name='pg-3'
 conninfo='host=192.168.1.163 user=repmgr dbname=repmgr connect_timeout=2'
 data_directory='/var/lib/postgresql/15/main'
 
-# Primary and Witness
+# Primary
+su - postgres
 
-pg_ctl /var/lib/postgresql/15/main
+createuser --superuser repmgr
+createdb --owner=repmgr repmgr
+psql -c "ALTER USER repmgr SET search_path TO repmgr, public;"
+
 # vi /var/lib/postgresql/15/main/postgresql.conf
-listen_addresses = '*' 
-max_wal_senders = 10
-max_replication_slots = 10
-wal_level = 'replica'
-hot_standby = on
-archive_mode = on
-archive_command = '/bin/true'
-wal_log_hints = on
+shared_preload_libraries = 'repmgr'
 
 # vi /var/lib/postgresql/15/main/pg_hba.conf
 
@@ -388,30 +420,36 @@ local   repmgr          repmgr                                  trust
 host    repmgr          repmgr          127.0.0.1/32            trust
 host    repmgr          repmgr          192.168.1.1/24          trust
 
-# test from standby node
+
+pgctl reload
+
+# Standby 
+# test from standby node or run checkprimay if setup alias revious step.
 psql 'host=192.168.1.161 user=repmgr dbname=repmgr connect_timeout=2'
-psql 'host=192.168.1.161 user=repmgr dbname=repmgr connect_timeout=2'
-psql 'host=192.168.1.161 user=repmgr dbname=repmgr connect_timeout=2'
-# alias
-# vi /etc/profile
-# primary 
-alias rep='repmgr -f /etc/repmgr/15/repmgr.conf'
+
+# Primary
+
+rep primary register
+rep cluster show
 
 # standby config
 # Note: these are command of repmgr run on postgres account other will be run root account
-systemctl stop postgresql
+systemctl stop pg_cluster
 rm -rf /var/lib/postgresql/15/main/*
 
+su - postgres # pg
 
-# try test clone 
+# try test clone and fix any warning
 repmgr -h 192.168.1.161 -U repmgr -d repmgr -f /etc/repmgr/15/repmgr.conf standby clone --dry-run
 
 # clone
 repmgr -h 192.168.1.161 -U repmgr -d repmgr -f /etc/repmgr/15/repmgr.conf standby clone
 
-# start 
-systemctl start postgresql
+# start  
+sudo systemctl start pg_cluster
 
 # register standby
 repmgr -f /etc/repmgr/15/repmgr.conf standby register
+
+
 ```
