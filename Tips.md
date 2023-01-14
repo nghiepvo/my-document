@@ -58,7 +58,7 @@ passwd username
 ```shell
 apt install sudo -y
 
-chmod 0777 /etc/sudoers
+chmod 0755 /etc/sudoers
 ```
 
 ```conf

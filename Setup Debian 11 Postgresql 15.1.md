@@ -23,7 +23,7 @@ apt install lsb-release gnupg2 wget vim curl -y
 sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 
-curl https://dl.enterprisedb.com/default/release/get/deb | bash
+ curl https://dl.enterprisedb.com/default/release/get/deb | bash
 apt update
 
 ```
@@ -213,7 +213,7 @@ systemctl restart postgresql
 **Testing for stream replication.**
 
 ## Setup PGPool-II
-
+ curl https://dl.enterprisedb.com/default/release/get/deb | sudo bash
 ```shell
 
 apt list pgpool2 libpgpool2 postgresql-15-pgpool2 -a
@@ -271,9 +271,84 @@ pg-3:5432:postgres:postgres:123456
 #ip link set ens19 up
 ```
 
+## repmgr
 
 ```conf
+
 # repmgr
+
+apt install postgresql-15 -y
+systemctl stop postgresql
+/lib/systemd/systemd-sysv-install disable postgresql
+
+
+# Import PATH 
+# vi /etc/profile
+if ...
+    PATH=....
+else
+    PATH = /usr/local/sbin:/usr/sbin:.... 
+
+# install sudoes, and set password for postgres
+apt install sudo -y
+chmod 0755 /etc/sudoers
+
+passwd postgres
+
+#vi /etc/sudoers
+username     ALL=(ALL:ALL) ALL
+
+chown -R postgres:postgres /usr/lib/postgresql/15/bin/
+
+su - postgres
+# import postgresql tool
+
+sudo ln -s /usr/lib/postgresql/15/bin/* /usr/sbin/
+
+systemctl stop postgresql
+sudo rm -rf /var/lib/postgresql/15/main/*
+
+initdb /var/lib/postgresql/15/main
+
+# su - postgres -c "/usr/lib/postgresql/15/bin/initdb /var/lib/postgresql/15/main"
+pg_ctl -D /var/lib/postgresql/15/main status
+
+# make some run file
+#vi /etc/postgresql/15/main/start.sh
+su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D /var/lib/postgresql/15/main start"
+# chmod +x /etc/postgresql/15/main/start.sh
+
+#vi /run/postgresql/stop.sh
+su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D /var/lib/postgresql/15/main stop"
+# chmod +x /etc/postgresql/15/main/stop.sh
+
+#vi /etc/postgresql/15/main/reload.sh
+su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D /var/lib/postgresql/15/main reload"
+# chmod +x /etc/postgresql/15/main/reload.sh
+
+
+# create a service systemctl
+sudo vi /lib/systemd/system/pg_cluster.service
+
+[Unit]
+Description=PG Cluster 15 (pg_ctl -D /var/lib/postgresql/15/main status)
+
+[Service]
+Type=simple
+ExecStart=/bin/bash /etc/postgresql/15/main/start.sh
+
+[Install]
+WantedBy=multi-user.target
+
+# -------
+sudo systemctl daemon-reload
+/lib/systemd/systemd-sysv-install enable postgresql
+sudo systemctl start pg_cluster
+sudo systemctl status pg_cluster
+
+# mkdir -p /etc/repmgr/15
+# vi /etc/repmgr/15/repmgr.conf
+
 
 node_id=1
 node_name='pg-1'
@@ -289,4 +364,54 @@ node_id=3
 node_name='pg-3'
 conninfo='host=192.168.1.163 user=repmgr dbname=repmgr connect_timeout=2'
 data_directory='/var/lib/postgresql/15/main'
+
+# Primary and Witness
+
+pg_ctl /var/lib/postgresql/15/main
+# vi /var/lib/postgresql/15/main/postgresql.conf
+listen_addresses = '*' 
+max_wal_senders = 10
+max_replication_slots = 10
+wal_level = 'replica'
+hot_standby = on
+archive_mode = on
+archive_command = '/bin/true'
+wal_log_hints = on
+
+# vi /var/lib/postgresql/15/main/pg_hba.conf
+
+local   replication     repmgr                                  trust
+host    replication     repmgr          127.0.0.1/32            trust
+host    replication     repmgr          192.168.1.1/24          trust
+
+local   repmgr          repmgr                                  trust
+host    repmgr          repmgr          127.0.0.1/32            trust
+host    repmgr          repmgr          192.168.1.1/24          trust
+
+# test from standby node
+psql 'host=192.168.1.161 user=repmgr dbname=repmgr connect_timeout=2'
+psql 'host=192.168.1.161 user=repmgr dbname=repmgr connect_timeout=2'
+psql 'host=192.168.1.161 user=repmgr dbname=repmgr connect_timeout=2'
+# alias
+# vi /etc/profile
+# primary 
+alias rep='repmgr -f /etc/repmgr/15/repmgr.conf'
+
+# standby config
+# Note: these are command of repmgr run on postgres account other will be run root account
+systemctl stop postgresql
+rm -rf /var/lib/postgresql/15/main/*
+
+
+# try test clone 
+repmgr -h 192.168.1.161 -U repmgr -d repmgr -f /etc/repmgr/15/repmgr.conf standby clone --dry-run
+
+# clone
+repmgr -h 192.168.1.161 -U repmgr -d repmgr -f /etc/repmgr/15/repmgr.conf standby clone
+
+# start 
+systemctl start postgresql
+
+# register standby
+repmgr -f /etc/repmgr/15/repmgr.conf standby register
 ```
