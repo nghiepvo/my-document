@@ -13,17 +13,17 @@ Ref: [Set Up a Highly Available PostgreSQL 13 Cluster on Ubuntu 20.04](https://w
 
 | HOSTNAME  | IP ADDRESS    | PACKAGES TO BE INSTALLED                                  |
 |-----------|---------------|-----------------------------------------------------------|
-| patroni-1 | 192.168.1.181 | PostgreSQL, PgBouncer, Patroni, etcd, haproxy, keepalived |
-| patroni-2 | 192.168.1.182 | PostgreSQL, PgBouncer, Patroni, etcd, haproxy, keepalived |
-| patroni-3 | 192.168.1.183 | PostgreSQL, PgBouncer, Patroni, etcd, haproxy, keepalived |
+| patroni1 | 192.168.1.181 | PostgreSQL, PgBouncer, Patroni, etcd, haproxy, keepalived |
+| patroni2 | 192.168.1.182 | PostgreSQL, PgBouncer, Patroni, etcd, haproxy, keepalived |
+| patroni3 | 192.168.1.183 | PostgreSQL, PgBouncer, Patroni, etcd, haproxy, keepalived |
 
 ```conf
 vi /etc/hosts
 
 ...
-192.168.1.181 patroni-1
-192.168.1.182 patroni-2
-192.168.1.183 patroni-3
+192.168.1.181 patroni1
+192.168.1.182 patroni2
+192.168.1.183 patroni3
 ```
 
 **Initial PostgreSQL.**
@@ -39,7 +39,7 @@ apt update
 **Install PostgreSQL.**
 
 ```shell
-apt -y install postgresql postgresql-client -y
+apt -y install postgresql-15 -y
 
 systemctl stop postgresql
 
@@ -129,9 +129,9 @@ export PGDATA="/var/lib/postgresql/15/main"
 export ETCDCTL_API="3"
 export PATRONI_ETCD_URL="http://127.0.0.1:2379"
 export PATRONI_SCOPE="pg_cluster"
-patroni-1=192.168.1.181 
-patroni-2=192.168.1.182 
-patroni-3=192.168.1.183
+patroni1=192.168.1.181 
+patroni2=192.168.1.182 
+patroni3=192.168.1.183
 ENDPOINTS=$patroni1:2379,$patroni2:2379,$patroni3:2379
 ```
 
@@ -176,7 +176,7 @@ vi /etc/patroni/config.yml
 
 scope: pg_cluster
 namespace: /service/
-name: "patroni-1"
+name: "patroni1"
 
 restapi:
     listen: 192.168.1.181:8008
@@ -235,11 +235,6 @@ tags:
     nosync: false
 ```
 
-```shell
-systemctl start patroni
-systemctl status patroni
-```
-
 **Configure Patroni-2.**
 
 ```conf
@@ -248,7 +243,7 @@ vi /etc/patroni/config.yml
 
 scope: pg_cluster
 namespace: /service/
-name: "patroni-2"
+name: "patroni2"
 
 restapi:
     listen: 192.168.1.182:8008
@@ -307,11 +302,6 @@ tags:
     nosync: false
 ```
 
-```shell
-systemctl start patroni
-systemctl status patroni
-```
-
 **Configure Patroni-3.**
 
 ```conf
@@ -320,7 +310,7 @@ vi /etc/patroni/config.yml
 
 scope: pg_cluster
 namespace: /service/
-name: "patroni-3"
+name: "patroni3"
 
 restapi:
     listen: 192.168.1.183:8008
@@ -378,6 +368,8 @@ tags:
     clonefrom: false
     nosync: false
 ```
+
+**Start from patroni-1,patroni-2,patroni-3 in the step by step.**
 
 ```shell
 systemctl start patroni
