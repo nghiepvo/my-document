@@ -294,6 +294,8 @@ alias pgctl='/usr/lib/postgresql/15/bin/pg_ctl -D /var/lib/postgresql/15/main'
 alias rep='repmgr -f /etc/repmgr/15/repmgr.conf'
 alias pg='su - postgres'
 alias checkprimary='psql "host=192.168.1.161 user=repmgr dbname=repmgr connect_timeout=2"'
+alias checkwitness='psql "host=192.168.1.162 user=repmgr dbname=repmgr connect_timeout=2"'
+alias checkstandby1='psql "host=192.168.1.163 user=repmgr dbname=repmgr connect_timeout=2"'
 
 # exit and login again for effect alias and export
 
@@ -305,6 +307,7 @@ passwd postgres
 
 # vi /etc/sudoers
 postgres ALL=(ALL:ALL) ALL
+postgres ALL = NOPASSWD: /usr/bin/systemctl restart pg_cluster.service, /usr/bin/systemctl start repmgrd.service, /usr/bin/systemctl stop repmgrd.service
 
 chown -R postgres:postgres /usr/lib/postgresql/15/bin/
 
@@ -400,7 +403,12 @@ node_name='pg-3'
 conninfo='host=192.168.1.163 user=repmgr dbname=repmgr connect_timeout=2'
 data_directory='/var/lib/postgresql/15/main'
 
-# Primary
+node_id=4
+node_name='witness'
+conninfo='host=192.168.1.164 user=repmgr dbname=repmgr connect_timeout=2'
+data_directory='/var/lib/postgresql/15/main'
+
+# Primary Witness
 su - postgres
 
 createuser --superuser repmgr
@@ -451,5 +459,87 @@ sudo systemctl start pg_cluster
 # register standby
 repmgr -f /etc/repmgr/15/repmgr.conf standby register
 
+# verify 
+rep cluster show --compact
 
+# Witness
+
+repmgr -f /etc/repmgr/15/repmgr.conf witness register -h 192.168.1.161
+
+# verify
+rep cluster show --compact
+
+
+# sudo vi /etc/repmgr/15/repmgr.conf
+
+... 
+failover='automatic'
+promote_command='/usr/bin/repmgr standby promote -f /etc/repmgr/15/repmgr.conf --log-to-file'
+follow_command='/usr/bin/repmgr standby follow -f /etc/repmgr/15/repmgr.conf --log-to-file --upstream-node-id=%n'
+monitor_interval_secs=2
+connection_check_type='ping'
+reconnect_attempts=4
+reconnect_interval=8
+primary_visibility_consensus=true
+standby_disconnect_on_failover=true
+repmgrd_service_start_command='sudo /usr/bin/systemctl start repmgrd.service'
+repmgrd_service_stop_command='sudo /usr/bin/systemctl stop repmgrd.service'
+service_start_command='/usr/lib/postgresql/15/bin/pg_ctl -D /var/lib/postgresql/15/main start'
+service_stop_command='/usr/lib/postgresql/15/bin/pg_ctl -D /var/lib/postgresql/15/main stop'
+service_restart_command='sudo /usr/bin/systemctl restart pg_cluster.service'
+service_reload_command='/usr/lib/postgresql/15/bin/pg_ctl -D /var/lib/postgresql/15/main reload'
+monitoring_history=yes
+log_status_interval=60
+priority=60 # pg-1: 100, pg-2: 60, pg-3: 40
+
+
+# vi /etc/default/repmgrd
+
+sudo /usr/bin/systemctl stop repmgrd.service
+
+sudo vi /etc/default/repmgrd
+
+# default settings for repmgrd. This file is source by /bin/sh from
+# /etc/init.d/repmgrd
+
+# disable repmgrd by default so it won't get started upon installation
+# valid values: yes/no
+REPMGRD_ENABLED=yes
+
+# configuration file (required)
+REPMGRD_CONF="/etc/repmgr/15/repmgr.conf"
+
+# additional options
+#REPMGRD_OPTS="--daemonize=false"
+
+# user to run repmgrd as
+REPMGRD_USER=postgres
+
+# repmgrd binary
+REPMGRD_BIN=/usr/bin/repmgrd
+
+# pid file
+REPMGRD_PIDFILE=/var/run/repmgrd.pid
+
+
+
+repmgr -f /etc/repmgr/15/repmgr.conf daemon start --dry-run
+repmgr -f /etc/repmgr/15/repmgr.conf daemon start
+
+# verify 
+
+rep cluster event --event=repmgrd_start
+
+# stop primary
+
+pgctl stop
+
+# check node 2
+rep cluster show --compact
+
+# rejoin primary
+repmgr node rejoin -f /etc/repmgr/15/repmgr.conf -d 'host=192.168.1.162 user=repmgr dbname=repmgr connect_timeout=2' --config-files=postgresql.local.conf,postgresql.conf --verbose --force-rewind --dry-run
+
+
+pg_rewind -D '/var/lib/postgresql/15/main' --source-server='host=192.168.1.162 user=repmgr dbname=repmgr connect_timeout=2'
 ```
