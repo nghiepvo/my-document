@@ -17,15 +17,6 @@ Ref: [Set Up a Highly Available PostgreSQL 13 Cluster on Ubuntu 20.04](https://w
 | patroni2 | 192.168.1.182 | PostgreSQL, PgBouncer, Patroni, etcd, haproxy, keepalived |
 | patroni3 | 192.168.1.183 | PostgreSQL, PgBouncer, Patroni, etcd, haproxy, keepalived |
 
-```conf
-vi /etc/hosts
-
-...
-192.168.1.181 patroni1
-192.168.1.182 patroni2
-192.168.1.183 patroni3
-```
-
 **Initial PostgreSQL.**
 
 ```shell
@@ -34,6 +25,15 @@ apt install lsb-release gnupg2 wget vim -y
 sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 apt update
+```
+
+```conf
+vi /etc/hosts
+
+...
+192.168.1.181 patroni1
+192.168.1.182 patroni2
+192.168.1.183 patroni3
 ```
 
 **Install PostgreSQL.**
