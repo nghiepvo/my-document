@@ -11,11 +11,13 @@ Ref: [Set Up a Highly Available PostgreSQL 13 Cluster on Ubuntu 20.04](https://w
 - HAProxy
 - Keepalived
 
-| HOSTNAME  | IP ADDRESS    | PACKAGES TO BE INSTALLED                                  |
-|-----------|---------------|-----------------------------------------------------------|
+| HOSTNAME | IP ADDRESS    | PACKAGES TO BE INSTALLED                                  |
+|----------|---------------|-----------------------------------------------------------|
 | patroni1 | 192.168.1.181 | PostgreSQL, PgBouncer, Patroni, etcd, haproxy, keepalived |
 | patroni2 | 192.168.1.182 | PostgreSQL, PgBouncer, Patroni, etcd, haproxy, keepalived |
 | patroni3 | 192.168.1.183 | PostgreSQL, PgBouncer, Patroni, etcd, haproxy, keepalived |
+
+**Important: hostname will not be specific character. LOL, I don't know why LOL!**
 
 **Initial PostgreSQL.**
 
@@ -31,6 +33,7 @@ apt update
 vi /etc/hosts
 
 ...
+# 192.168.1.180 pool
 192.168.1.181 patroni1
 192.168.1.182 patroni2
 192.168.1.183 patroni3
@@ -52,6 +55,7 @@ su - postgres
 rm -rf /var/lib/postgresql/15/main/*
 
 exit
+
 ```
 
 **Install etcd.**
@@ -66,6 +70,26 @@ systemctl disable etcd
 rm -rf /var/lib/etcd/default
 
 mv /etc/default/etcd /etc/default/etcd-orig
+
+```
+
+**Configure etc on other node.**
+
+```conf
+vi /etc/default/etcd
+
+ETCD_NAME="pool"
+ETCD_DATA_DIR="/var/lib/etcd/patroni"
+ETCD_LISTEN_PEER_URLS="http://192.168.1.180:2380"
+ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379"
+ETCD_ADVERTISE_CLIENT_URLS="http://0.0.0.0:2379"
+ETCD_ENABLE_V2="true"
+```
+
+```shell
+systemctl start etcd
+systemctl status etcd
+etcd -name pool -initial-advertise-peer-urls http://0.0.0.0:2380
 ```
 
 **Configure etcd on patroni-1.**
@@ -133,6 +157,8 @@ patroni1=192.168.1.181
 patroni2=192.168.1.182 
 patroni3=192.168.1.183
 ENDPOINTS=$patroni1:2379,$patroni2:2379,$patroni3:2379
+
+alias pactl='patronictl -c /etc/patroni/config.yml'
 ```
 
 ```shell
@@ -166,6 +192,9 @@ apt -y install patroni
 systemctl stop patroni
 
 systemctl disable patroni
+
+pip install --upgrade  --user patroni[etcd]
+
 ```
 
 **Configure Patroni-1.**
@@ -179,11 +208,14 @@ namespace: /service/
 name: "patroni1"
 
 restapi:
-    listen: 192.168.1.181:8008
-    connect_address: 192.168.1.181:8008
+  listen: 192.168.1.181:8008
+  connect_address: 192.168.1.181:8008
 
 etcd:
-    hosts: 192.168.1.181:2379,192.168.1.182:2379,192.168.1.183:2379
+  hosts: 192.168.1.181:2379,192.168.1.182:2379,192.168.1.183:2379
+  #if use a etcd node
+  #host: 192.168.1.180:2379
+  #use_proxies: true
 
 bootstrap:
   dcs:
@@ -227,12 +259,21 @@ postgresql:
     superuser:
       username: postgres
       password: "123456"
+    rewind:
+      username: rewind
+      password: "123456"
 
 tags:
     nofailover: false
     noloadbalance: false
     clonefrom: false
     nosync: false
+```
+
+```shell
+patroni /etc/patroni/config.yml --validate-config
+systemctl start patroni
+systemctl status patroni
 ```
 
 **Configure Patroni-2.**
@@ -246,11 +287,14 @@ namespace: /service/
 name: "patroni2"
 
 restapi:
-    listen: 192.168.1.182:8008
-    connect_address: 192.168.1.182:8008
+  listen: 192.168.1.182:8008
+  connect_address: 192.168.1.182:8008
 
 etcd:
-    hosts: 192.168.1.181:2379,192.168.1.182:2379,192.168.1.183:2379
+  hosts: 192.168.1.181:2379,192.168.1.182:2379,192.168.1.183:2379
+  #if use a etcd node
+  #host: 192.168.1.180:2379
+  #use_proxies: true
 
 bootstrap:
   dcs:
@@ -294,12 +338,21 @@ postgresql:
     superuser:
       username: postgres
       password: "123456"
+    rewind:
+      username: rewind
+      password: "123456"
 
 tags:
-    nofailover: false
-    noloadbalance: false
-    clonefrom: false
-    nosync: false
+  nofailover: false
+  noloadbalance: false
+  clonefrom: false
+  nosync: false
+```
+
+```shell
+patroni /etc/patroni/config.yml --validate-config
+systemctl start patroni
+systemctl status patroni
 ```
 
 **Configure Patroni-3.**
@@ -313,11 +366,14 @@ namespace: /service/
 name: "patroni3"
 
 restapi:
-    listen: 192.168.1.183:8008
-    connect_address: 192.168.1.183:8008
+  listen: 192.168.1.183:8008
+  connect_address: 192.168.1.183:8008
 
 etcd:
-    hosts: 192.168.1.181:2379,192.168.1.182:2379,192.168.1.184:2379
+  hosts: 192.168.1.181:2379,192.168.1.182:2379,192.168.1.183:2379
+  #if use a etcd node
+  #host: 192.168.1.180:2379
+  #use_proxies: true
 
 bootstrap:
   dcs:
@@ -361,19 +417,30 @@ postgresql:
     superuser:
       username: postgres
       password: "123456"
+    rewind:
+      username: rewind
+      password: "123456"
 
 tags:
-    nofailover: false
-    noloadbalance: false
-    clonefrom: false
-    nosync: false
+  nofailover: false
+  noloadbalance: false
+  clonefrom: false
+  nosync: false
 ```
 
-**Start from patroni-1,patroni-2,patroni-3 in the step by step.**
-
 ```shell
+patroni /etc/patroni/config.yml --validate-config
 systemctl start patroni
 systemctl status patroni
+```
+
+```shell
+patronictl --help
+
+pactl query -U postgres --password -d postgres -c "select inet_server_addr();"
+
+pactl switchover --master [your_leader_node] --candidate [your_replica_node]
+
 ```
 
 **Install PgBouncer.**
