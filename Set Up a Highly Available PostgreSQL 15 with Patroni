@@ -443,6 +443,67 @@ pactl switchover --master [your_leader_node] --candidate [your_replica_node]
 
 ```
 
+**Install Pgpool2 (192.168.1.180).**
+
+```shell
+apt install pgpool2 -y
+systemctl stop pgpool2
+rm -rf /var/log/postgresql/pgpool_status
+
+vi /etc/pgpool2/pgpool.conf
+
+listen_addresses = '*'
+
+backend_hostname0 = '192.168.1.181'
+backend_port0 = 5432
+backend_weight0 = 1
+backend_data_directory0 = '/var/lib/postgresql/15/main'
+#backend_flag0 = 'ALLOW_TO_FAILOVER'
+backend_application_name0 = 'patroni1'
+
+backend_hostname1 = '192.168.1.182'
+backend_port1 = 5432
+backend_weight1 = 2
+backend_data_directory1 = '/var/lib/postgresql/15/main'
+#backend_flag1 = 'ALLOW_TO_FAILOVER'
+backend_application_name1 = 'patroni2'
+
+backend_hostname2 = '192.168.1.183'
+backend_port2 = 5432
+backend_weight2 = 3
+backend_data_directory2 = '/var/lib/postgresql/15/main'
+#backend_flag2 = 'ALLOW_TO_FAILOVER'
+backend_application_name2 = 'patroni3'
+
+
+pool_passwd = ''
+
+log_statement = on
+log_per_node_statement = on
+
+load_balance_mode = on
+statement_level_load_balance = on
+
+master_slave_mode = on
+master_slave_sub_mode = 'stream'
+
+sr_check_user = 'replicator'
+sr_check_password = '123456'
+
+health_check_period = 10
+health_check_user = 'replicator'
+health_check_password = '123456'
+
+
+systemctl start pgpool2
+systemctl status pgpool2
+
+PGPASSWORD=123456 psql -U postgres -h 192.168.1.180 -c "select inet_server_addr();"
+PGPASSWORD=123456 psql -U postgres -h 192.168.1.180 -c "show pool_nodes"
+PGPASSWORD=123456 psql -U postgres -h 192.168.1.180 -d postgres
+
+```
+
 **Install PgBouncer.**
 
 ```shell
