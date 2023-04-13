@@ -437,6 +437,8 @@ systemctl status patroni
 ```shell
 patronictl --help
 
+patronictl -c /etc/patroni/config.yml list
+
 pactl query -U postgres --password -d postgres -c "select inet_server_addr();"
 
 pactl switchover --master [your_leader_node] --candidate [your_replica_node]

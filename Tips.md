@@ -82,4 +82,11 @@ patroni-3=192.168.1.183
 ENDPOINTS=$patroni1:2379,$patroni2:2379,$patroni3:2379
 ```
 
+## Kill port in linux
 
+```shell
+sudo netstat -tulpn | grep LISTEN
+sudo lsof -t -i tcp:8080
+
+sudo kill $(sudo lsof -t -i tcp:8080)
+```
