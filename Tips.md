@@ -90,3 +90,56 @@ sudo lsof -t -i tcp:8080
 
 sudo kill $(sudo lsof -t -i tcp:8080)
 ```
+
+## Mount to proxmox container disk
+```shell
+find /dev | grep 104
+
+kpartx -a /dev/NVME1T/vm-104-disk-0
+
+mount /dev/mapper/NVME1T-vm--104--disk--0 /mnt
+
+umount /mnt
+
+```
+
+## Export ssl from Letencrypt
+
+```shell
+#- Congratulations! Your certificate and chain have been saved at:
+#   /etc/letsencrypt/live/mainichi-nihongo.net/fullchain.pem
+#   Your key file has been saved at:
+#   /etc/letsencrypt/live/mainichi-nihongo.net/privkey.pem
+#   Your certificate will expire on 2023-11-13. To obtain a new or
+#   tweaked version of this certificate in the future, simply run
+#   certbot again. To non-interactively renew *all* of your
+#   certificates, run "certbot renew"
+# - If you like Certbot, please consider supporting our work by:
+
+#   Donating to ISRG / Let's Encrypt:   https://letsencrypt.org/donate
+#   Donating to EFF:                    https://eff.org/donate-le
+   
+openssl x509 -outform der -in fullchain.pem -out mainichi-nihongo.net.crt
+
+openssl pkcs12 -export -in fullchain.pem -inkey privkey.pem -out mainichi-nihongo.net.pfx
+
+openssl pkcs12 -export -in cert.pem -inkey privkey.pem -out mainichi-nihongo.net.pfx
+
+openssl pkcs12 -inkey privkey.pem.pem -in bob_cert.cert -export -out bob_pfx.pfx
+```
+
+# export SSL  from browser and upload on server CI/CD
+
+```shell
+sudo openssl x509 -inform DER -in certificate.cer -out certificate.crt
+
+sudo mv certificate.crt /usr/share/ca-certificate/
+
+cd /usr/share/ca-certificate
+
+sudo chmod 644 certificate.crt
+
+sudo dpkg-reconfigure ca-certificates
+
+sudo update-ca-certificates
+```
