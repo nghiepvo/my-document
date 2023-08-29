@@ -128,7 +128,7 @@ openssl pkcs12 -export -in cert.pem -inkey privkey.pem -out mainichi-nihongo.net
 openssl pkcs12 -inkey privkey.pem.pem -in bob_cert.cert -export -out bob_pfx.pfx
 ```
 
-# export SSL  from browser and upload on server CI/CD
+## Export SSL  from browser and upload on server CI/CD
 
 ```shell
 sudo openssl x509 -inform DER -in certificate.cer -out certificate.crt
