@@ -143,3 +143,7 @@ sudo dpkg-reconfigure ca-certificates
 
 sudo update-ca-certificates
 ```
+## Fix lỗi không cài đc mysql on debian
+```shell
+apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 467B942D3A79BD29
+```
