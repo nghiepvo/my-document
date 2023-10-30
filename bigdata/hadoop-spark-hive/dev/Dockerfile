@@ -24,7 +24,7 @@ RUN echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
 
 USER $USERNAME
 
-ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64/
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 
 # Hadoop
 COPY --from=base --chown=$USERNAME:$GROUPNAME /opt/hadoop /opt/hadoop
