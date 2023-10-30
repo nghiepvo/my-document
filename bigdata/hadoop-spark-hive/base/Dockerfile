@@ -1,6 +1,6 @@
-FROM ubuntu:latest
+FROM python:3.11.6-bullseye
 
-RUN sed -i -e "s|http://archive.ubuntu.com|http://jp.archive.ubuntu.com|g" /etc/apt/sources.list \
+RUN sed -i -e "s|deb http://deb.debian.org/debian bullseye main contrib non-free|deb-src http://deb.debian.org/debian bullseye main contrib non-free|g" /etc/apt/sources.list \
  && apt-get -qq update  \
  && DEBIAN_FRONTEND=noninteractive apt-get -qq install --no-install-recommends \
       sudo \
@@ -8,7 +8,6 @@ RUN sed -i -e "s|http://archive.ubuntu.com|http://jp.archive.ubuntu.com|g" /etc/
       curl \
       gnupg \
       procps \
-      python3 \
       python3-pip \
       python-is-python3 \
       coreutils \
@@ -68,7 +67,7 @@ RUN set -x \
  && curl -fsSL https://jdbc.postgresql.org/download/postgresql-42.3.2.jar -o $SPARK_HOME/jars/postgresql-42.3.2.jar
 
 ENV PYTHONHASHSEED=1
-ENV PYSPARK_PYTHON=python3
+ENV PYSPARK_PYTHON=/usr/local/bin/python3
 ENV SPARK_CONF_DIR=$SPARK_HOME/conf
 ENV PATH=$SPARK_HOME/sbin:$SPARK_HOME/bin:$PATH
 

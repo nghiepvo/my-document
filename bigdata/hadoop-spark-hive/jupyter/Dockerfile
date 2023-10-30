@@ -1,7 +1,8 @@
 FROM hadoop-hive-spark-base AS base
-FROM tensorflow/tensorflow:latest-gpu-jupyter
+FROM tensorflow/tensorflow:latest-jupyter
+#FROM tensorflow/tensorflow:latest-gpu-jupyter
 
-RUN sed -i -e "s|http://archive.ubuntu.com|http://jp.archive.ubuntu.com|g" /etc/apt/sources.list \
+RUN sed -i -e "s|deb http://deb.debian.org/debian bullseye main contrib non-free|deb-src http://deb.debian.org/debian bullseye main contrib non-free|g" /etc/apt/sources.list \
  && apt-get -qq update  \
  && DEBIAN_FRONTEND=noninteractive apt-get -qq install --no-install-recommends \
       sudo \
@@ -36,7 +37,7 @@ ENV LD_LIBRARY_PATH=$HADOOP_HOME/lib/native:$LD_LIBRARY_PATH
 COPY --from=base --chown=$USERNAME:$GROUPNAME /opt/spark /opt/spark
 ENV SPARK_HOME=/opt/spark
 ENV PYTHONHASHSEED=1
-ENV PYSPARK_PYTHON=python3
+ENV PYSPARK_PYTHON=/usr/local/bin/python3
 ENV SPARK_CONF_DIR=$SPARK_HOME/conf
 ENV PATH=$SPARK_HOME/sbin:$SPARK_HOME/bin:$PATH
 

@@ -17,3 +17,32 @@ export SOLR_AUTH_TYPE="basic" && export SOLR_AUTHENTICATION_OPTS="-Dbasicauth=so
 
 #Generate Password on site https://clemente-biondo.github.io/ and update into ./haproxy/haproxy.cfg file and replace base64 endcode "Basic c29scjpPaG1pZGFzQDEyMw=="
 ```
+
+```python
+
+import findspark
+findspark.init('/opt/spark')
+from pyspark.sql import SparkSession
+spark = SparkSession.builder\
+    .enableHiveSupport()\
+    .getOrCreate()
+
+people = spark.createDataFrame([
+    {"deptId": 1, "age": 40, "name": "Hyukjin Kwon", "gender": "M", "salary": 50},
+    {"deptId": 1, "age": 50, "name": "Takuya Ueshin", "gender": "M", "salary": 100},
+    {"deptId": 2, "age": 60, "name": "Xinrong Meng", "gender": "F", "salary": 150},
+    {"deptId": 3, "age": 20, "name": "Haejoon Lee", "gender": "M", "salary": 200}
+])
+
+age_col = people.age
+
+department = spark.createDataFrame([
+    {"id": 1, "name": "PySpark"},
+    {"id": 2, "name": "ML"},
+    {"id": 3, "name": "Spark SQL"}
+])
+
+people.filter(people.age > 30).join(
+    department, people.deptId == department.id).groupBy(
+    department.name, "gender").agg({"salary": "avg", "age": "max"}).show()
+```
