@@ -146,7 +146,7 @@ services:
       - "worker1:172.28.1.3"
       - "worker2:172.28.1.4"
       - "history:172.28.1.5"
-    # uncomment if you change jupyter Dockerfile with FROM tensorflow/tensorflow:latest-gpu-jupyter
+    # uncomment if you change jupyter,dev Dockerfile with FROM tensorflow/tensorflow:latest-gpu-jupyter
     # deploy:
     #   resources:
     #     reservations:
@@ -165,7 +165,7 @@ services:
     networks:
       sparknet:
         ipv4_address: 172.28.1.7
-    # uncomment if you change jupyter Dockerfile with FROM tensorflow/tensorflow:latest-gpu-jupyter
+    # uncomment if you change jupyter,dev Dockerfile with FROM tensorflow/tensorflow:latest-gpu-jupyter
     # deploy:
     #   resources:
     #     reservations:

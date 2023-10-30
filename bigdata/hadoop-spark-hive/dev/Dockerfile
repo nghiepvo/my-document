@@ -1,5 +1,6 @@
 FROM hadoop-hive-spark-base AS base
 FROM tensorflow/tensorflow:latest-jupyter
+#FROM tensorflow/tensorflow:latest-gpu-jupyter
 
 RUN sed -i -e "s|deb http://deb.debian.org/debian bullseye main contrib non-free|deb-src http://deb.debian.org/debian bullseye main contrib non-free|g" /etc/apt/sources.list \
  && apt-get -qq update  \
