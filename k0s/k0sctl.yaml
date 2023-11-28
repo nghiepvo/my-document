@@ -1,0 +1,34 @@
+apiVersion: k0sctl.k0sproject.io/v1beta1
+kind: Cluster
+metadata:
+  name: k0s-cluster
+spec:
+  hosts:
+  - ssh:
+      address: 192.168.1.156
+      user: root
+      port: 22
+      keyPath: ~/.ssh/id_rsa_k3s
+    role: controller
+  - ssh:
+      address: 192.168.1.157
+      user: root
+      port: 22
+      keyPath: ~/.ssh/id_rsa_k3s
+    role: worker
+  - ssh:
+      address: 192.168.1.158
+      user: root
+      port: 22
+      keyPath: ~/.ssh/id_rsa_k3s
+    role: worker
+  # k0s:
+  #     version: v1.28.4+k0s.0
+  #     config:
+  #       apiVersion: k0s.k0sproject.io/v1beta1
+  #       kind: ClusterConfig
+  #       metadata:
+  #         name: k0s-cluster
+  #       spec:
+  #         network:
+  #           provider: calico

@@ -1,0 +1,16 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik
+  namespace: longhorn-storage
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`longhorn.k0s.example.com`)
+      kind: Rule
+      services:
+        - name: longhorn-frontend
+          port: 80
+      middlewares:
+        - name: registry-basic-auth

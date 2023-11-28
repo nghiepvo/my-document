@@ -1,0 +1,11 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+    name: real-ip
+    namespace: default
+spec:
+    plugin:
+        cloudflarewarp:
+            disableDefault: "false"
+            trustip:
+                - 2400:cb00::/32
