@@ -1,0 +1,28 @@
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: nginx-private-registry
+  namespace: default
+  labels:
+    app: nginx-private-registry
+spec:
+  replicas: 1
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 2
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: nginx-private-registry
+  template:
+    metadata:
+      labels:
+        app: nginx-private-registry
+    spec:
+      containers:
+      - name: nginx
+        image: imgs.ohmidasvn.dev/nginx
+        imagePullPolicy: Always
+      imagePullSecrets:
+      - name: docker-cert
