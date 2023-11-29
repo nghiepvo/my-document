@@ -541,9 +541,10 @@ globalArguments:
 # -- Additional arguments to be passed at Traefik's binary
 # All available options available on https://docs.traefik.io/reference/static-configuration/cli/
 ## Use curly braces to pass values: `helm install --set="additionalArguments={--providers.kubernetesingress.ingressclass=traefik-internal,--log.level=DEBUG}"`
-additionalArguments: []
+additionalArguments:
 #  - "--providers.kubernetesingress.ingressclass=traefik-internal"
-#  - "--log.level=DEBUG"
+#  - "--log.level=INFO"
+  - "--entrypoints.pg.address=:5432/tcp"
 
 # -- Environment variables to be passed to Traefik's binary
 env:
@@ -576,6 +577,11 @@ envFrom: []
 #     name: secret-name
 
 ports:
+  pg:
+    port: 5432
+    expose: true
+    exposedPort: 5432
+    protocol: TCP
   traefik:
     port: 9000
     # -- Use hostPort if set.

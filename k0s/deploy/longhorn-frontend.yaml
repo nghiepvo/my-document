@@ -1,13 +1,13 @@
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
-  name: traefik
+  name: longhorn-frontend
   namespace: longhorn-storage
 spec:
   entryPoints:
-    - web
+    - websecure
   routes:
-    - match: Host(`longhorn.k0s.example.com`)
+    - match: Host(`longhorn.k0s.ohmidasvn.dev`)
       kind: Rule
       services:
         - name: longhorn-frontend

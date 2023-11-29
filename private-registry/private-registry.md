@@ -73,14 +73,14 @@ docker image rmi docker.ohmidasvn.dev/jupyterlab
 
 docker push docker.ohmidasvn.dev/jupyterlab
 
-curl -X GET -u "admin:Ohmidas@123" https://docker.ohmidasvn.dev/v2/_catalog
+curl -X GET -u "admin:Mypassword" https://docker.ohmidasvn.dev/v2/_catalog
 
-curl -s GET -u "admin:Ohmidas@123" https://docker.ohmidasvn.dev/v2/jupyterlab/tags/list
+curl -s GET -u "admin:Mypassword" https://docker.ohmidasvn.dev/v2/jupyterlab/tags/list
 
 # delete repo
-curl -sS -u "admin:Ohmidas@123" https://docker.ohmidasvn.dev/v2/jupyterlab/manifests/latest -H 'Accept: application/vnd.docker.distribution.manifest.v2+json' -w '%header{Docker-Content-Digest}\n' -o /dev/null 
+curl -sS -u "admin:Mypassword" https://docker.ohmidasvn.dev/v2/jupyterlab/manifests/latest -H 'Accept: application/vnd.docker.distribution.manifest.v2+json' -w '%header{Docker-Content-Digest}\n' -o /dev/null 
 
-curl -sS -X DELETE -u "admin:Ohmidas@123" https://docker.ohmidasvn.dev/v2/jupyterlab/manifests/sha256:023917ec6a886d0e8e15f28fb543515a5fcd8d938edb091e8147db4efed388ee
+curl -sS -X DELETE -u "admin:Mypassword" https://docker.ohmidasvn.dev/v2/jupyterlab/manifests/sha256:023917ec6a886d0e8e15f28fb543515a5fcd8d938edb091e8147db4efed388ee
 
 # allow connect private registry with insecure
 
@@ -95,8 +95,7 @@ vi /etc/docker/daemon.json
 systemctl restart docker
 
 # install on k0s
-kubectl create secret docker-registry docker-cert --docker-server=imgs.ohmidasvn.dev --docker-username=admin --docker-password=Ohmidas@123
-
+kubectl create secret docker-registry docker-cert --dry-run=client --docker-server=imgs.ohmidasvn.dev --docker-username=admin --docker-password=Mypassword -o yaml > docker-cert.yaml
 kubectl apply -f deployment.yaml
 ```
 

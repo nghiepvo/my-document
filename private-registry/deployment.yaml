@@ -1,3 +1,11 @@
+apiVersion: v1
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJpbWdzLm9obWlkYXN2bi5kZXYiOnsidXNlcm5hbWUiOiJhZG1pbiIsInBhc3N3b3JkIjoiT2htaWRhc0AxMjMiLCJhdXRoIjoiWVdSdGFXNDZUMmh0YVdSaGMwQXhNak09In19fQ==
+kind: Secret
+metadata:
+  name: docker-cert
+type: kubernetes.io/dockerconfigjson
+
 ---
 kind: Deployment
 apiVersion: apps/v1
