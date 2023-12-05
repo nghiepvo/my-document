@@ -58,14 +58,6 @@ openssl x509 -text -noout -in certs/domain.crt
 cd ..
 docker compose up -d
 
-# register certificate on client
-scp ~./private-registry/certs/domain.crt /usr/share/ca-certificates/
-
-dpkg-reconfigure ca-certificates
-
-update-ca-certificates
-
-
 
 docker tag busybox docker.ohmidasvn.dev/jupyterlab
 

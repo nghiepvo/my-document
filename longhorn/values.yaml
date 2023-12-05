@@ -84,7 +84,7 @@ persistence:
   defaultClass: true
   defaultFsType: ext4
   defaultMkfsParams: ""
-  defaultClassReplicaCount: 2
+  defaultClassReplicaCount: 3
   defaultDataLocality: disabled # best-effort otherwise
   reclaimPolicy: Delete
   migratable: false
@@ -216,7 +216,7 @@ longhornDriver:
   #  label-key2: "label-value2"
 
 longhornUI:
-  replicas: 2
+  replicas: 3
   priorityClass: ~
   tolerations: []
   ## If you want to set tolerations for Longhorn UI Deployment, delete the `[]` in the line above

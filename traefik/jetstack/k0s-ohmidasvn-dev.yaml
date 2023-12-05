@@ -2,13 +2,13 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: k0s-ohmidasvn-dev
+  name: k3s-ohmidasvn-dev
 spec:
-  secretName: k0s-ohmidasvn-dev-tls
+  secretName: k3s-ohmidasvn-dev-tls
   issuerRef:
     name: letsencrypt-production
     kind: ClusterIssuer
-  commonName: "*.k0s.ohmidasvn.dev"
+  commonName: "*.k3s.ohmidasvn.dev"
   dnsNames:
-  - "k0s.ohmidasvn.dev"
-  - "*.k0s.ohmidasvn.dev"
+  - "k3s.ohmidasvn.dev"
+  - "*.k3s.ohmidasvn.dev"

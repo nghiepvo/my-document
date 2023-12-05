@@ -1,0 +1,18 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-dashboard
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`traefik.k3s.ohmidasvn.dev`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
+      kind: Rule
+      services:
+        - kind: TraefikService
+          name: api@internal
+      middlewares:
+        - name: registry-basic-auth
+  tls:
+    secretName: k0s-ohmidasvn-dev-tls

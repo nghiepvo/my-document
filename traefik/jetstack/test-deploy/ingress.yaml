@@ -8,10 +8,10 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`nginx.k0s.ohmidasvn.dev`)
+    - match: Host(`nginx.k3s.ohmidasvn.dev`)
       kind: Rule
       services:
         - name: nginx
           port: 80
   tls:
-    secretName: k0s-ohmidasvn-dev-tls
+    secretName: k3s-ohmidasvn-dev-tls
