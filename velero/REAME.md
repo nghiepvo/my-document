@@ -22,10 +22,16 @@ velero install \
     --plugins velero/velero-plugin-for-aws:v1.8.2 \
     --bucket velero-backup \
     --backup-location-config region=local-velero-backup,s3ForcePathStyle=true,s3Url=http://192.168.1.111:9000 \
-    --snapshot-location-config region=local-velero-snapshot,s3ForcePathStyle=true,s3Url=http://192.168.1.111:9000 \
+    --use-volume-snapshots=false \
     --secret-file ./credentials
 
 kubectl -n velero logs deployment/velero
+
+velero backup create backup-all-default-namespace --include-namespaces default
+
+velero backup delete backup-all-default-namespace
+
+velero restore create --from-backup backup-all-default-namespace
 
 velero uninstall
 ```

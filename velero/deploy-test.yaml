@@ -1,23 +1,35 @@
----
-apiVersion: v1
-kind: Pod
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: mypod
+  labels:
+    run: nginx
+  name: nginx-test-velero-deploy
 spec:
-  containers:
-    - name: myfrontend
-      image: nginx
-      resources:
-        limits:
-          memory: 512Mi
-          cpu: "1"
-        requests:
-          memory: 256Mi
-          cpu: "0.2"
-      volumeMounts:
-      - mountPath: "/data"
-        name: mypd
-  volumes:
-    - name: mypd
-      persistentVolumeClaim:
-        claimName: pvc-test
+  replicas: 1
+  selector:
+    matchLabels:
+      run: nginx-test-velero
+  template:
+    metadata:
+      labels:
+        run: nginx-test-velero
+    spec:
+      containers:
+        - name: myfrontend
+          image: nginx
+          ports:
+            - containerPort: 80
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: "1"
+            requests:
+              memory: 256Mi
+              cpu: "0.2"
+          volumeMounts:
+          - mountPath: "/data"
+            name: mypd
+      volumes:
+        - name: mypd
+          persistentVolumeClaim:
+            claimName: pvc-test
