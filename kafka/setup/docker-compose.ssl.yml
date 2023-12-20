@@ -24,6 +24,7 @@ services:
       - "29092:29092"
     environment:
       KAFKA_BROKER_ID: 1
+      KAFKA_BROKER_RACK: "r1"
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: SSL:SSL,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: SSL://broker1:29092,PLAINTEXT_HOST://localhost:9092
@@ -42,10 +43,12 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_JMX_PORT: 9101
       KAFKA_JMX_OPTS: -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=broker1 -Dcom.sun.management.jmxremote.rmi.port=9101
+      KAFKA_LOG4J_LOGGERS: "kafka.authorizer.logger=INFO"
+      KAFKA_LOG4J_ROOT_LOGLEVEL: INFO
     volumes:
       - ./ssl/secrets/credentials:/etc/kafka/secrets/credentials
-      - ./ssl/secrets/truststore/kafka.truststore.jks:/etc/kafka/secrets/kafka.truststore.jks
-      - ./ssl/secrets/keystore/broker1.server.keystore.jks:/etc/kafka/secrets/kafka.keystore.jks
+      - ./ssl/secrets/kafka.truststore.jks:/etc/kafka/secrets/kafka.truststore.jks
+      - ./ssl/secrets/broker1.server.keystore.jks:/etc/kafka/secrets/kafka.keystore.jks
       - ./ssl/secrets/client.properties:/home/appuser/client.properties:ro
 
   kafka-ui:

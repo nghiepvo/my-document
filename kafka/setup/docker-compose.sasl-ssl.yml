@@ -13,7 +13,7 @@ services:
       ZOOKEEPER_AUTH_PROVIDER_SASL: org.apache.zookeeper.server.auth.SASLAuthenticationProvider
       KAFKA_OPTS: -Djava.security.auth.login.config=/etc/kafka/secrets/zookeeper_jaas.conf
     volumes:
-      - ./sasl/secrets/zookeeper_jaas.conf:/etc/kafka/secrets/zookeeper_jaas.conf:ro
+      - ./sasl-ssl/secrets/zookeeper_jaas.conf:/etc/kafka/secrets/zookeeper_jaas.conf:ro
 
   broker1:
     image: confluentinc/cp-kafka:7.5.0
@@ -30,14 +30,20 @@ services:
       KAFKA_BROKER_ID: 1
       KAFKA_BROKER_RACK: "r1"
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_INTER_BROKER_LISTENER_NAME: SASL_PLAINTEXT
-      KAFKA_SECURITY_PROTOCOL: SASL_PLAINTEXT
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: SASL_PLAINTEXT:SASL_PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: SASL_PLAINTEXT://broker1:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: SASL_SSL
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: SASL_SSL:SASL_SSL,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: SASL_SSL://broker1:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
       KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
+      KAFKA_SSL_TRUSTSTORE_FILENAME: kafka.truststore.jks
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: credentials
+      KAFKA_SSL_KEYSTORE_FILENAME: kafka.keystore.jks
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: credentials
+      KAFKA_SSL_KEY_CREDENTIALS: credentials
       KAFKA_OPTS: -Djava.security.auth.login.config=/etc/kafka/secrets/kafka_jaas.conf
       KAFKA_SUPER_USERS: 'User:kafkaui'
+      # enables 2-way authentication
+      KAFKA_SSL_CLIENT_AUTH: "required"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
@@ -47,19 +53,26 @@ services:
       KAFKA_LOG4J_LOGGERS: "kafka.authorizer.logger=INFO"
       KAFKA_LOG4J_ROOT_LOGLEVEL: INFO
     volumes:
-      - ./sasl/secrets/kafka_jaas.conf:/etc/kafka/secrets/kafka_jaas.conf:ro
-      - ./sasl/secrets/client.properties:/home/appuser/client.properties:ro
+      - ./sasl-ssl/secrets/kafka_jaas.conf:/etc/kafka/secrets/kafka_jaas.conf:ro
+      - ./sasl-ssl/secrets/credentials:/etc/kafka/secrets/credentials:ro
+      - ./sasl-ssl/secrets/kafka.truststore.jks:/etc/kafka/secrets/kafka.truststore.jks:ro
+      - ./sasl-ssl/secrets/broker1.server.keystore.jks:/etc/kafka/secrets/kafka.keystore.jks:ro
+      - ./sasl-ssl/secrets/client.properties:/home/appuser/client.properties:ro
 
   kafka-ui:
+    image: provectuslabs/kafka-ui:master
     container_name: kafka-ui
-    image: provectuslabs/kafka-ui:latest
     ports:
-      - 8080:8080
+      - "8080:8080"
     depends_on:
       - broker1
     environment:
-      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_NAME: local  
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: broker1:29092
-      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SASL_PLAINTEXT
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SASL_SSL
       KAFKA_CLUSTERS_0_PROPERTIES_SASL_MECHANISM: PLAIN
       KAFKA_CLUSTERS_0_PROPERTIES_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="kafkaui" password="Ohmidas@123";'
+      KAFKA_CLUSTERS_0_SSL_TRUSTSTORELOCATION: /kafka.truststore.jks
+      KAFKA_CLUSTERS_0_SSL_TRUSTSTOREPASSWORD: Ohmidas@123
+    volumes:
+      - ./sasl-ssl/secrets/kafka.truststore.jks:/kafka.truststore.jks:ro
