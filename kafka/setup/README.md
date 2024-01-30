@@ -6,3 +6,5 @@ kafka-configs --zookeeper zookeeper:2181 --alter --add-config 'SCRAM-SHA-256=[it
 kafka-configs --zookeeper zookeeper:2181 --alter --add-config 'SCRAM-SHA-256=[iterations=8192,password=Ohmidas@123]' --entity-type users --entity-name kafkaui
 kafka-configs --zookeeper zookeeper:2181 --alter --add-config 'SCRAM-SHA-256=[iterations=8192,password=Ohmidas@123]' --entity-type users --entity-name client
 ``` 
+
+https://jaehyeon.me/blog/2023-07-13-kafka-development-with-docker-part-10/
