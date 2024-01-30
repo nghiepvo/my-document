@@ -2,7 +2,7 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.0
+    image: confluentinc/cp-zookeeper:7.5.3
     hostname: zookeeper
     container_name: zookeeper
     ports:
@@ -16,7 +16,7 @@ services:
       - ./sasl-ssl-scram/secrets/zookeeper_jaas.conf:/etc/kafka/secrets/zookeeper_jaas.conf:ro
 
   config-scram:
-    image: confluentinc/cp-kafka:7.5.0
+    image: confluentinc/cp-kafka:7.5.3
     container_name: "config-scram"
     depends_on:
       - zookeeper
@@ -32,7 +32,7 @@ services:
       - ./sasl-ssl-scram/secrets/zookeeper_jaas_client.conf:/etc/kafka/secrets/zookeeper_jaas_client.conf:ro
 
   broker1:
-    image: confluentinc/cp-kafka:7.5.0
+    image: confluentinc/cp-kafka:7.5.3
     hostname: broker1
     container_name: broker1
     depends_on:
@@ -76,6 +76,43 @@ services:
       - ./sasl-ssl-scram/secrets/broker1.server.keystore.jks:/etc/kafka/secrets/kafka.keystore.jks:ro
       - ./sasl-ssl-scram/secrets/supper-admin.properties:/home/appuser/supper-admin.properties:ro
       - ./sasl-ssl-scram/secrets/client.properties:/home/appuser/client.properties:ro
+
+  kafka-create-topics:
+    image: confluentinc/cp-kafka:7.5.3
+    depends_on:
+      - broker1
+    hostname: kafka-create-topics
+    command: ["bash", "./create-topics.sh"]
+    working_dir: /scripts
+    volumes:
+    - ./scripts:/scripts
+
+  ksqldb-server:
+    image: confluentinc/cp-ksqldb-server:7.5.3
+    hostname: ksqldb-server
+    container_name: ksqldb-server
+    depends_on:
+      - broker1
+    ports:
+      - "8088:8088"
+    environment:
+      KSQL_CONFIG_DIR: "/etc/ksql"
+      KSQL_BOOTSTRAP_SERVERS: "broker1:9092"
+      KSQL_HOST_NAME: ksqldb-server
+      KSQL_LISTENERS: "http://0.0.0.0:8088"
+      KSQL_CACHE_MAX_BYTES_BUFFERING: 0
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_REPLICATION_FACTOR: 1
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: 'true'
+      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: 'true'
+
+  ksqldb-cli:
+    image: confluentinc/cp-ksqldb-cli:7.5.3
+    container_name: ksqldb-cli
+    depends_on:
+      - broker1
+      - ksqldb-server
+    entrypoint: /bin/sh
+    tty: true
 
   kafka-ui:
     image: provectuslabs/kafka-ui:master
