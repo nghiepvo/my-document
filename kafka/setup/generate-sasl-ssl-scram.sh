@@ -122,14 +122,17 @@ echo "Collect all file to $SECRETS_FOLDER"
 mkdir $SECRETS_FOLDER
 cd $SECRETS_FOLDER
 echo $PASSWORD > ./credentials
-cat << EOF > command.properties
-security.protocol=SSL
+
+cat << EOF > supper-admin.properties
+sasl.mechanism=SCRAM-SHA-256
+sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username="admin" password="$PASSWORD";
+security.protocol=SASL_SSL
 ssl.truststore.location=/etc/kafka/secrets/kafka.truststore.jks
 ssl.truststore.password=$PASSWORD
 EOF
 
 cat << EOF > client.properties
-sasl.mechanism=PLAIN
+sasl.mechanism=SCRAM-SHA-256
 sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username="client" password="$PASSWORD";
 security.protocol=SASL_SSL
 ssl.truststore.location=/etc/kafka/secrets/kafka.truststore.jks
@@ -140,12 +143,6 @@ cat << EOF > kafka_jaas.conf
 KafkaServer {
     org.apache.kafka.common.security.scram.ScramLoginModule required
     username="admin"
-    password="$PASSWORD";
-};
-
-KafkaClient {
-    org.apache.kafka.common.security.scram.ScramLoginModule required
-    username="kafkaui"
     password="$PASSWORD";
 };
 

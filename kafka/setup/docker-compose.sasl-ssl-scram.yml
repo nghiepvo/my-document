@@ -15,29 +15,28 @@ services:
     volumes:
       - ./sasl-ssl-scram/secrets/zookeeper_jaas.conf:/etc/kafka/secrets/zookeeper_jaas.conf:ro
 
-  # config-zookeeper:
-  #   image: confluentinc/cp-kafka:7.5.0
-  #   container_name: "config-zookeeper"
-  #   depends_on:
-  #     - zookeeper
-  #   command: "bash -c 'echo Waiting for Zookeeper to be ready... && \
-  #                         cub zk-ready zookeeper:22181 120 && \
-  #                         kafka-configs --zookeeper zookeeper:22181 --alter --add-config 'SCRAM-SHA-256=[iterations=4096,password=Ohmidas@123]' --entity-type users --entity-name admin && \
-  #                         kafka-configs --zookeeper zookeeper:22181 --alter --add-config 'SCRAM-SHA-256=[iterations=4096,password=Ohmidas@123]' --entity-type users --entity-name kafkaui && \
-  #                         kafka-configs --zookeeper zookeeper:22181 --alter --add-config 'SCRAM-SHA-256=[iterations=4096,password=Ohmidas@123]' --entity-type users --entity-name client '"
-  #   environment:
-  #     KAFKA_BROKER_ID: ignored
-  #     KAFKA_ZOOKEEPER_CONNECT: ignored
-  #     KAFKA_OPTS: -Djava.security.auth.login.config=/etc/kafka/secrets/zookeeper_jaas_client.conf
-  #   volumes:
-  #     - ./sasl-ssl-scram/secrets/zookeeper_jaas_client.conf:/etc/kafka/secrets/zookeeper_jaas_client.conf
+  config-scram:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: "config-scram"
+    depends_on:
+      - zookeeper
+    command: "bash -c 'echo Waiting for Zookeeper to be ready... && \
+                          cub zk-ready zookeeper:2181 120 && \
+                          kafka-configs --zookeeper zookeeper:2181 --alter --add-config 'SCRAM-SHA-256=[iterations=8192,password=Ohmidas@123]' --entity-type users --entity-name admin && \
+                          kafka-configs --zookeeper zookeeper:2181 --alter --add-config 'SCRAM-SHA-256=[iterations=8192,password=Ohmidas@123]' --entity-type users --entity-name kafkaui '"
+    environment:
+      KAFKA_BROKER_ID: ignored
+      KAFKA_ZOOKEEPER_CONNECT: ignored
+      KAFKA_OPTS: -Djava.security.auth.login.config=/etc/kafka/secrets/zookeeper_jaas_client.conf
+    volumes:
+      - ./sasl-ssl-scram/secrets/zookeeper_jaas_client.conf:/etc/kafka/secrets/zookeeper_jaas_client.conf:ro
 
   broker1:
     image: confluentinc/cp-kafka:7.5.0
     hostname: broker1
     container_name: broker1
     depends_on:
-      - zookeeper
+      - config-scram
     expose:
       - 9101
       - 9092
@@ -58,7 +57,8 @@ services:
       KAFKA_SSL_KEYSTORE_CREDENTIALS: credentials
       KAFKA_SSL_KEY_CREDENTIALS: credentials
       KAFKA_OPTS: -Djava.security.auth.login.config=/etc/kafka/secrets/kafka_jaas.conf
-      KAFKA_SUPER_USERS: 'User:kafkaui'
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
+      KAFKA_SUPER_USERS: 'User:admin;User:kafkaui'
       # enables 2-way authentication
       KAFKA_SSL_CLIENT_AUTH: "required"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
@@ -74,22 +74,25 @@ services:
       - ./sasl-ssl-scram/secrets/credentials:/etc/kafka/secrets/credentials:ro
       - ./sasl-ssl-scram/secrets/kafka.truststore.jks:/etc/kafka/secrets/kafka.truststore.jks:ro
       - ./sasl-ssl-scram/secrets/broker1.server.keystore.jks:/etc/kafka/secrets/kafka.keystore.jks:ro
+      - ./sasl-ssl-scram/secrets/supper-admin.properties:/home/appuser/supper-admin.properties:ro
       - ./sasl-ssl-scram/secrets/client.properties:/home/appuser/client.properties:ro
 
-  # kafka-ui:
-  #   image: provectuslabs/kafka-ui:master
-  #   container_name: kafka-ui
-  #   ports:
-  #     - "8080:8080"
-  #   depends_on:
-  #     - broker1
-  #   environment:
-  #     KAFKA_CLUSTERS_0_NAME: local  
-  #     KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: broker1:29092
-  #     KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SASL_SSL
-  #     KAFKA_CLUSTERS_0_PROPERTIES_SASL_MECHANISM: PLAIN
-  #     KAFKA_CLUSTERS_0_PROPERTIES_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="kafkaui" password="Ohmidas@123";'
-  #     KAFKA_CLUSTERS_0_SSL_TRUSTSTORELOCATION: /kafka.truststore.jks
-  #     KAFKA_CLUSTERS_0_SSL_TRUSTSTOREPASSWORD: Ohmidas@123
-  #   volumes:
-  #     - ./sasl-ssl-scram/secrets/kafka.truststore.jks:/kafka.truststore.jks:ro
+  kafka-ui:
+    image: provectuslabs/kafka-ui:master
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    depends_on:
+      - broker1
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: broker1:29092
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SASL_SSL
+      KAFKA_CLUSTERS_0_PROPERTIES_SASL_MECHANISM: SCRAM-SHA-256
+      KAFKA_CLUSTERS_0_PROPERTIES_PROTOCOL: SASL
+      KAFKA_CLUSTERS_0_SSL_TRUSTSTORELOCATION: /kafka.truststore.jks
+      KAFKA_CLUSTERS_0_SSL_TRUSTSTOREPASSWORD: Ohmidas@123
+      KAFKA_CLUSTERS_0_PROPERTIES_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.scram.ScramLoginModule required username="kafkaui" password="Ohmidas@123";'
+    volumes:
+      - ./sasl-ssl-scram/secrets/kafka.truststore.jks:/kafka.truststore.jks:ro
