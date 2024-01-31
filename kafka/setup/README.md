@@ -29,19 +29,21 @@ kafka-topics --bootstrap-server broker1:29092  --create --topic first-topic --pa
 ``` 
 
 ## Hello ksqlDB
-We want to set the Ksql consumer to earliest so that we can see all messages that we will be producing. Run the following:  
+
 
 ```shell
+docker compose -f docker-compose.sasl-ssl-scram.yml exec ksqldb-cli ksql http://ksqldb-server:8088
+#We want to set the Ksql consumer to earliest so that we can see all messages that we will be producing. Run the following:
+
 SET 'auto.offset.reset'='earliest';
 
-REATE STREAM users (
+CREATE STREAM users (
     ROWKEY INT KEY,
     USERNAME VARCHAR
 ) WITH (
     KAFKA_TOPIC='users',
     VALUE_FORMAT='JSON'
 );
-
 
 SHOW STREAMS;
 
@@ -52,6 +54,9 @@ INSERT INTO users (username) VALUES ('John');
 SELECT 'Hello, ' + USERNAME AS GREETING
 FROM users
 EMIT CHANGES;
+
+docker compose -f docker-compose.sasl-ssl-scram.yml \
+exec broker1 bash -c 'kafka-console-consumer --bootstrap-server broker1:29092 --from-beginning --topic users --consumer.config ~/client.properties'
 
 ```
 
