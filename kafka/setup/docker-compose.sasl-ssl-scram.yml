@@ -12,6 +12,11 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
       ZOOKEEPER_AUTH_PROVIDER_SASL: org.apache.zookeeper.server.auth.SASLAuthenticationProvider
       KAFKA_OPTS: -Djava.security.auth.login.config=/etc/kafka/secrets/zookeeper_jaas.conf
+    healthcheck:
+      test: [ "CMD", "bash", "-c", "echo 'ruok' | nc localhost 2181" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       - ./sasl-ssl-scram/secrets/zookeeper_jaas.conf:/etc/kafka/secrets/zookeeper_jaas.conf:ro
 
@@ -19,7 +24,8 @@ services:
     image: confluentinc/cp-kafka:7.5.3
     container_name: "config-scram"
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     command: "bash -c 'echo Waiting for Zookeeper to be ready... && \
                           cub zk-ready zookeeper:2181 120 && \
                           kafka-configs --zookeeper zookeeper:2181 --alter --add-config 'SCRAM-SHA-256=[iterations=8192,password=Ohmidas@123]' --entity-type users --entity-name admin && \
@@ -69,6 +75,11 @@ services:
       KAFKA_JMX_OPTS: -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=broker1 -Dcom.sun.management.jmxremote.rmi.port=9101
       KAFKA_LOG4J_LOGGERS: "kafka.authorizer.logger=INFO"
       KAFKA_LOG4J_ROOT_LOGLEVEL: INFO
+    healthcheck:
+      test: [ "CMD", "bash", "-c", 'nc -z broker1 9092' ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       - ./sasl-ssl-scram/secrets/kafka_jaas.conf:/etc/kafka/secrets/kafka_jaas.conf:ro
       - ./sasl-ssl-scram/secrets/credentials:/etc/kafka/secrets/credentials:ro
@@ -80,10 +91,14 @@ services:
   kafka-create-topics:
     image: confluentinc/cp-kafka:7.5.3
     depends_on:
-      - broker1
+      broker1:
+        condition: service_healthy
     hostname: kafka-create-topics
     command: ["bash", "./init.sh"]
     working_dir: /scripts
+    environment:
+      KAFKA_BROKER_ID: ignored
+      KAFKA_ZOOKEEPER_CONNECT: ignored
     volumes:
     - ./scripts:/scripts
     - ./sasl-ssl-scram/secrets/kafka.truststore.jks:/etc/kafka/secrets/kafka.truststore.jks:ro
@@ -95,7 +110,8 @@ services:
     hostname: ksqldb-server
     container_name: ksqldb-server
     depends_on:
-      - broker1
+      broker1:
+        condition: service_healthy
     ports:
       - "8088:8088"
     environment:
@@ -112,6 +128,11 @@ services:
       KSQL_SECURITY_PROTOCOL: SASL_SSL
       KSQL_SASL_MECHANISM: SCRAM-SHA-256
       KSQL_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.scram.ScramLoginModule required username="admin" password="Ohmidas@123";'
+    healthcheck:
+      test: [ "CMD", "bash", "-c", 'nc -z ksqldb-server 8088' ]
+      interval: 10s
+      timeout: 5s
+      retries: 5  
     volumes:
       - ./sasl-ssl-scram/secrets/kafka.truststore.jks:/etc/kafka-ksqldb/secrets/kafka.truststore.jks:ro
       - ./sasl-ssl-scram/secrets/broker1.server.keystore.jks:/etc/kafka-ksqldb/secrets/kafka.keystore.jks:ro
@@ -121,8 +142,10 @@ services:
     image: confluentinc/cp-ksqldb-cli:7.5.3
     container_name: ksqldb-cli
     depends_on:
-      - broker1
-      - ksqldb-server
+      broker1:
+        condition: service_healthy
+      ksqldb-server:
+        condition: service_healthy
     entrypoint: /bin/sh
     tty: true
 
@@ -132,7 +155,8 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - broker1
+      broker1:
+        condition: service_healthy
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181

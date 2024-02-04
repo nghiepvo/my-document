@@ -16,4 +16,4 @@ echo "Creating the users topic ..."
 
 kafka-topics --bootstrap-server broker1:29092  --create --topic users --partitions 4 --replication-factor 1 --command-config ~/client.properties
 
-sleep infinity
+# sleep infinity
