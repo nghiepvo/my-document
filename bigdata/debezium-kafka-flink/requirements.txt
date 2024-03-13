@@ -1,0 +1,5 @@
+Faker==23.3.0
+psycopg2-binary==2.9.9
+python-dateutil==2.8.2
+schedule==1.2.1
+six==1.16.0
