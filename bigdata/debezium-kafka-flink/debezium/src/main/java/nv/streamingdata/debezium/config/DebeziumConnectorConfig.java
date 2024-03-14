@@ -37,7 +37,7 @@ public class DebeziumConnectorConfig {
     @Bean
     public io.debezium.config.Configuration customerConnector() throws IOException {
         File offsetStorageTempFile = File.createTempFile("offsets_", ".dat");
-        File dbHistoryTempFile = File.createTempFile("dbhistory_", ".dat");
+
         return io.debezium.config.Configuration.create()
                 .with(EmbeddedEngine.ENGINE_NAME, "customer-mysql-connector")
                 .with(EmbeddedEngine.CONNECTOR_CLASS, "io.debezium.connector.mysql.MySqlConnector")
@@ -45,21 +45,17 @@ public class DebeziumConnectorConfig {
                 .with(EmbeddedEngine.OFFSET_STORAGE_FILE_FILENAME, offsetStorageTempFile.getAbsolutePath())
 //                .with(EmbeddedEngine.OFFSET_STORAGE, "org.apache.kafka.connect.storage.MemoryOffsetBackingStore")
                 .with(MySqlConnectorConfig.SCHEMA_HISTORY, MemorySchemaHistory.class.getName())
-                .with("database.hostname", customerDbHost)
-                .with("database.port", customerDbPort)
-                .with("database.user", customerDbUsername)
-                .with("database.password", customerDbPassword)
-                .with("database.dbname", customerDbName)
-                .with("database.include.list", customerDbName)
-                .with(MySqlConnectorConfig.TABLE_EXCLUDE_LIST, "customer")
+                .with(MySqlConnectorConfig.HOSTNAME, customerDbHost)
+                .with(MySqlConnectorConfig.PORT, customerDbPort)
+                .with(MySqlConnectorConfig.USER, customerDbUsername)
+                .with(MySqlConnectorConfig.PASSWORD, customerDbPassword)
+                .with(MySqlConnectorConfig.DATABASE_NAME, customerDbName)
+                .with(MySqlConnectorConfig.DATABASE_INCLUDE_LIST, customerDbName)
+//                .with(MySqlConnectorConfig.TABLE_EXCLUDE_LIST, "customer")
                 .with(MySqlConnectorConfig.TOPIC_PREFIX, "cdc")
                 .with(MySqlConnectorConfig.INCLUDE_SCHEMA_CHANGES, "false")
-                .with("schemas.enable", false)
                 .with("database.allowPublicKeyRetrieval", "true")
                 .with(MySqlConnectorConfig.SERVER_ID, "10181")
-                .with("database.server.name", "customer-mysql-db-server")
-                .with("database.history", "io.debezium.relational.history.FileDatabaseHistory")
-                .with("database.history.file.filename", dbHistoryTempFile.getAbsolutePath())
                 .build();
     }
 }
