@@ -30,7 +30,7 @@ def generate_transaction():
         "paymentMethod": random.choice(['credit_card', 'debit_card', 'online_transfer']),
         "ipAddress": fake.ipv4(),
         "voucherCode": random.choice(['', 'DISCOUNT10', '']),
-        'affiliateId': fake.uuid4()
+        'affiliate_id': fake.uuid4()
     }
 
 def generate_data():
@@ -50,12 +50,12 @@ def generate_data():
     cur.execute(
         """
         INSERT INTO transactions(transaction_id, user_id, timestamp, amount, currency, city, country, merchant_name, payment_method, 
-        ip_address, affiliateId, voucher_code)
+        ip_address, affiliate_id, voucher_code)
         VALUES (%s, %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
         """, (transaction["transactionId"], transaction["userId"], datetime.fromtimestamp(transaction["timestamp"]).strftime('%Y-%m-%d %H:%M:%S'),
               transaction["amount"], transaction["currency"], transaction["city"], transaction["country"],
               transaction["merchantName"], transaction["paymentMethod"], transaction["ipAddress"],
-              transaction["affiliateId"], transaction["voucherCode"])
+              transaction["affiliate_id"], transaction["voucherCode"])
     )
 
     cur.close()

@@ -26,8 +26,9 @@ def create_table(conn):
             payment_method VARCHAR(255),
             ip_address VARCHAR(255),
             voucher_code VARCHAR(255),
-            affiliateId VARCHAR(255)
-        )
+            affiliate_id VARCHAR(255)
+        );
+        ALTER TABLE transactions REPLICA IDENTITY FULL;
         """)
 
     cursor.close()
