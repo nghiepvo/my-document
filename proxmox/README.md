@@ -26,12 +26,11 @@ iface enp4s0 inet manual
 
 allow-hotplug wlp5s0
 iface wlp5s0 inet static
-        address 192.168.0.24/24
+        address 192.168.0.6/24
         netmask 255.255.255.0
         gateway 192.168.0.1
 
 auto vmbr0
-#private sub network
 iface vmbr0 inet static
         address  10.10.10.1/24
         bridge-ports none
