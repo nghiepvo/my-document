@@ -165,3 +165,9 @@ curl -fsSL https://download.opensuse.org/repositories/home:lamlng/Debian_12/Rele
 sudo apt update
 sudo apt install ibus-bamboo
 ```
+
+### Edit sudoes file
+
+```shell
+sudo visudo
+```
