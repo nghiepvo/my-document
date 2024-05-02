@@ -42,3 +42,35 @@ iface vmbr0 inet static
         post-down iptables -t nat -D POSTROUTING -s '10.10.10.0/24' -o wlp5s0 -j MASQUERADE
 
 ```
+
+#### NOTE: it's working but after reset PC the wifi setting is not working on OS (Debian 12) so you need comand out
+
+```shell
+auto lo
+iface lo inet loopback
+
+iface enp4s0 inet manual
+
+# allow-hotplug wlp5s0
+# iface wlp5s0 inet static
+#         address 192.168.0.6/24
+#         netmask 255.255.255.0
+#         gateway 192.168.0.1
+
+# auto vmbr0
+# iface vmbr0 inet static
+#         address  10.10.10.1/24
+#         bridge-ports none
+#         bridge-stp off
+#         bridge-fd 0
+
+#         post-up   echo 1 > /proc/sys/net/ipv4/ip_forward
+#         post-up   iptables -t nat -A POSTROUTING -s '10.10.10.0/24' -o wlp5s0 -j MASQUERADE
+#         post-down iptables -t nat -D POSTROUTING -s '10.10.10.0/24' -o wlp5s0 -j MASQUERADE
+
+
+# Run [systemctl restart networking.service] for restart
+```
+
+
+

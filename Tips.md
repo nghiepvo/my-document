@@ -164,6 +164,8 @@ echo 'deb http://download.opensuse.org/repositories/home:/lamlng/Debian_12/ /' |
 curl -fsSL https://download.opensuse.org/repositories/home:lamlng/Debian_12/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/home_lamlng.gpg > /dev/null
 sudo apt update
 sudo apt install ibus-bamboo
+
+# [Super + space] for change keyboard language
 ```
 
 ### Edit sudoes file
@@ -171,3 +173,4 @@ sudo apt install ibus-bamboo
 ```shell
 sudo visudo
 ```
+
