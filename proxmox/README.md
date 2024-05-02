@@ -2,6 +2,20 @@
 
 ### Setup on laptop via wifi
 
+#### setup on debian first.
+
+https://pve.proxmox.com/wiki/Install_Proxmox_VE_on_Debian_12_Bookworm
+
+#### if the wifi base on linux distribute which is not working: 
+
+setup with other provider wifi.
+
+https://www.linuxbabe.com/debian/connect-to-wi-fi-from-terminal-on-debian-wpa-supplicant
+
+https://wiki.debian.org/WiFi/HowToUse#wpa_supplicant
+
+https://pve.proxmox.com/pve-docs/chapter-sysadmin.html#_masquerading_nat_with_span_class_monospaced_iptables_span
+
 config with interface enp4s0, wlp5s0
 
 ```Shell
