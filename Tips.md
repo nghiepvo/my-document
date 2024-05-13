@@ -165,6 +165,9 @@ curl -fsSL https://download.opensuse.org/repositories/home:lamlng/Debian_12/Rele
 sudo apt update
 sudo apt install ibus-bamboo
 
+# let run it without sudo
+ibus restart 
+
 # [Super + space] for change keyboard language
 ```
 
