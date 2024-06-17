@@ -157,6 +157,9 @@ sudo apt install zsh -y
 
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
+chsh -s $(which zsh)
+
+# should logout for apply zsh for default shell
 
 git clone https://github.com/zsh-users/zsh-autosuggestions.git $ZSH_CUSTOM/plugins/zsh-autosuggestions
 
@@ -186,7 +189,9 @@ sudo apt update
 sudo apt install ibus-bamboo
 
 # let run it without sudo
-ibus restart 
+ibus restart
+
+# restart pc for apply text vietnam
 
 # [Super + space] for change keyboard language
 ```
