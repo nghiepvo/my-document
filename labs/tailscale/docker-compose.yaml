@@ -1,0 +1,56 @@
+---
+version: "3.7"
+services:
+  tailscale-nginx-proxy-manager:
+    image: tailscale/tailscale:latest
+    hostname: tailscale-nginx-proxy-manager
+    environment:
+      - TS_AUTHKEY=tskey-auth-kgz47scgEu11CNTRL-PjPnbX6WPJZS7Qum4ckWHZcRbqYPmMz4
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+    volumes:
+      - ./tailscale-nginx-proxy-manager/state:/var/lib/tailscale
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - net_admin
+    networks:
+      - kind
+    restart: unless-stopped
+  nginx-proxy-manager:
+    image: 'jc21/nginx-proxy-manager:latest'
+    restart: unless-stopped
+    volumes:
+      - ./tailscale-nginx-proxy-manager/data:/data
+      - ./tailscale-nginx-proxy-manager/letsencrypt:/etc/letsencrypt
+    depends_on:
+      - tailscale-nginx-proxy-manager
+    network_mode: service:tailscale-nginx-proxy-manager
+  
+  tailscale-haproxy:
+    image: tailscale/tailscale:latest
+    hostname: tailscale-haproxy
+    environment:
+      - TS_AUTHKEY=tskey-auth-kgz47scgEu11CNTRL-PjPnbX6WPJZS7Qum4ckWHZcRbqYPmMz4
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+    volumes:
+      - ./tailscale-haproxy/state:/var/lib/tailscale
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - net_admin
+    networks:
+      - kind
+    restart: unless-stopped
+  haproxy:
+    image: 'haproxy:latest'
+    restart: unless-stopped
+    volumes:
+      - ./tailscale-haproxy/letsencrypt:/etc/letsencrypt
+    depends_on:
+      - tailscale-haproxy
+    network_mode: service:tailscale-haproxy
+networks:
+  kind:
+    external: true

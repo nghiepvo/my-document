@@ -202,3 +202,25 @@ ibus restart
 sudo visudo
 ```
 
+### set up docker autocomplete
+
+```shell
+mkdir -p ~/.oh-my-zsh/completions
+docker completion zsh > ~/.oh-my-zsh/completions/_docker
+# edit your zsh profile
+vi ~/.zshrc
+# plugins=(docker)
+```
+
+### set up kubectl autocomplete
+
+```shell
+mkdir -p ~/.oh-my-zsh/custom/plugins/kubectl-autocomplete/
+
+kubectl completion zsh > ~/.oh-my-zsh/custom/plugins/kubectl-autocomplete/kubectl-autocomplete.plugin.zsh
+
+# edit your zsh profile
+vi ~/.zshrc
+# plugins=(kubectl-autocomplete)
+```
+
